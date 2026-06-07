@@ -1,0 +1,8 @@
+{
+  "name": "tools",
+  "description": "Personal general-purpose tools: conversation-history search and web-scraper.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Dumky de Wilde"
+  }
+}

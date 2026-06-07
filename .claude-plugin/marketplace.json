@@ -1,0 +1,20 @@
+{
+  "name": "tools",
+  "owner": {
+    "name": "Dumky de Wilde",
+    "url": "https://github.com/dumkydewilde/tools"
+  },
+  "metadata": {
+    "description": "Dumky's personal Claude Code / Codex skill plugins.",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "tools",
+      "source": "./plugins/claude/tools",
+      "description": "Personal general-purpose tools: conversation-history search and web-scraper.",
+      "version": "0.1.0",
+      "category": "productivity"
+    }
+  ]
+}
