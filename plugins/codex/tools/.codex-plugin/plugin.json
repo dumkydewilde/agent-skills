@@ -12,6 +12,7 @@
     "longDescription": "Dumky's personal general-purpose agent tools: search local assistant conversation history across Claude/Codex/ChatGPT, and build resilient web scrapers via a discovery-then-script workflow.",
     "developerName": "Dumky de Wilde",
     "category": "Productivity",
+    "defaultPrompt": "Use the tools plugin to search local conversation history or build resilient web scrapers.",
     "capabilities": [
       "Read",
       "Write"
