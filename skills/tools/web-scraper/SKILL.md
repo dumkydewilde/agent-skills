@@ -164,4 +164,8 @@ Start
 - For authenticated endpoints, prompt the user for credentials or tokens
   rather than hardcoding anything.
 - If the site uses Cloudflare, Akamai, or similar WAFs, flag this early
-  and adjust the strategy accordingly.
+  and adjust the strategy accordingly. For a Cloudflare managed challenge
+  (403 "Just a moment..."), see the "Cloudflare managed challenge" subsection
+  in `references/scraping-patterns.md`: switching browser channel does not
+  help, but a derived non-headless User-Agent plus
+  `--disable-blink-features=AutomationControlled` (together) usually clears it.

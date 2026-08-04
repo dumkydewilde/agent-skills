@@ -491,12 +491,75 @@ When using Playwright, verify ALL of these:
 - [ ] `navigator.plugins` has entries (not empty)
 - [ ] `navigator.languages` is set (not empty)
 - [ ] `window.chrome` object exists
-- [ ] User-Agent matches a real, recent browser
+- [ ] User-Agent matches a real, recent browser (derive it by stripping the
+      `HeadlessChrome` marker from the browser's own UA, don't hardcode one that
+      may mismatch the platform/TLS fingerprint)
 - [ ] Viewport is a realistic resolution (1920x1080, not 800x600)
 - [ ] `--disable-blink-features=AutomationControlled` is set
 - [ ] Real-looking mouse movements and delays between actions
 - [ ] Timezone and locale are set consistently
 - [ ] `hardwareConcurrency` and `deviceMemory` return reasonable values
+
+### Cloudflare "managed challenge" (headless 403 "Just a moment...")
+
+Cloudflare's managed/JS challenge blocks the default headless fingerprint
+outright: HTTP `403` with page title `Just a moment...` and body markers like
+`challenge-platform`, `cf_chl`, or a `cf-mitigated` response header. Field-tested
+lessons:
+
+- **Switching the browser *channel* does not help.** Headless Chromium, headless
+  Chrome, and headless Edge (`channel="msedge"`) are all blocked the same way.
+  The signal Cloudflare keys on is *headless*, not the brand — so "try it with
+  Edge" is a dead end while the browser stays headless.
+- **Two cheap fixes, effective only *together*.** A real (non-`HeadlessChrome`)
+  User-Agent AND `--disable-blink-features=AutomationControlled`. In a controlled
+  test, each one *alone* still returned 403; only the combination passed, stably.
+  Test the combination, never either half in isolation.
+- **Derive the UA, don't hardcode it.** Read the browser's own UA and strip the
+  headless marker so the Chrome version and platform stay consistent with the
+  real TLS/JA3 fingerprint. A hardcoded UA naming the wrong platform is itself a
+  detectable mismatch.
+
+```python
+def stealth_user_agent(browser) -> str:
+    """Real UA with the headless marker removed (version/platform-consistent)."""
+    ctx = browser.new_context()
+    try:
+        ua = ctx.new_page().evaluate("navigator.userAgent")
+    finally:
+        ctx.close()
+    return ua.replace("HeadlessChrome", "Chrome")
+```
+
+**Diagnose with a controlled matrix — and rule out IP reputation.** Before
+concluding a tweak "fixed" it, run the same request under each of: plain headless
+/ UA-only / flag-only / both / headed. A prior *successful* solve (e.g. one headed
+run) can warm your IP's Cloudflare reputation so later headless requests pass for
+reasons unrelated to your change; re-run plain-headless to confirm it still fails.
+
+```python
+CF_MARKERS = ("just a moment", "challenge-platform", "cf_chl",
+              "enable javascript and cookies", "cf-mitigated")
+
+def is_challenged(title: str, body: str) -> bool:
+    hay = (title + " " + body).lower()
+    return any(m in hay for m in CF_MARKERS)
+```
+
+**Escalation ladder** if UA + flag is not enough:
+
+1. Headed browser under a virtual display (`xvfb-run ...`) on servers — a real,
+   non-headless browser solves the JS challenge itself.
+2. A residential IP / proxy (datacenter ranges carry low reputation).
+3. A dedicated challenge-solver service (last resort).
+
+**Authenticated personal sessions.** A stored `cf_clearance` cookie is bound to
+the IP + UA + TLS that solved the challenge, so it usually will NOT transfer from
+the machine where you captured the session to the host that runs the scraper. A
+real browser re-solves the challenge fresh each run and so does not depend on that
+cookie carrying over. Keep the site's *auth/subscriber* cookies (which unlock
+paywalled content) conceptually separate from Cloudflare clearance — the former
+transfer fine; the latter generally don't.
 
 ### Playwright with human-like behavior
 
