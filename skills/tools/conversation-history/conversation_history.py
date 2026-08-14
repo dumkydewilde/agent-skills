@@ -35,6 +35,8 @@ CLAUDE_DESKTOP_EXPORT = HOME / "conductor" / "claude-desktop-export"
 CODEX_SESSIONS = HOME / ".codex" / "sessions"
 CHATGPT_APP_SUPPORT = HOME / "Library" / "Application Support" / "com.openai.chat"
 CHATGPT_EXPORT_CANDIDATES = (
+    # The conversation-archive sync consolidates each export here, so prefer it.
+    HOME / "data" / "chatgpt-export" / "conversations.json",
     HOME / "Downloads" / "conversations.json",
     HOME / "Downloads" / "chatgpt-export" / "conversations.json",
     HOME / "Downloads" / "ChatGPT-export" / "conversations.json",
