@@ -6,14 +6,15 @@ Work through these in order — stop as soon as you find a viable approach.
 ## Table of Contents
 
 1. [Network Request Interception](#1-network-request-interception)
-2. [Mobile App API Discovery (APK Decompilation)](#2-mobile-app-api-discovery-apk-decompilation)
-3. [Server-Rendered JSON Blobs](#3-server-rendered-json-blobs)
-4. [CMS and Platform APIs](#4-cms-and-platform-apis)
-5. [GraphQL Endpoints](#5-graphql-endpoints)
-6. [Structured Data in HTML](#6-structured-data-in-html)
-7. [Data Attributes](#7-data-attributes)
-8. [Stable CSS Selectors](#8-stable-css-selectors)
-9. [Discovery Report Template](#9-discovery-report-template)
+2. [Embed and Syndication Endpoints](#2-embed-and-syndication-endpoints)
+3. [Mobile App API Discovery (APK Decompilation)](#3-mobile-app-api-discovery-apk-decompilation)
+4. [Server-Rendered JSON Blobs](#4-server-rendered-json-blobs)
+5. [CMS and Platform APIs](#5-cms-and-platform-apis)
+6. [GraphQL Endpoints](#6-graphql-endpoints)
+7. [Structured Data in HTML](#7-structured-data-in-html)
+8. [Data Attributes](#8-data-attributes)
+9. [Stable CSS Selectors](#9-stable-css-selectors)
+10. [Discovery Report Template](#10-discovery-report-template)
 
 ---
 
@@ -114,7 +115,114 @@ Never try to "send" the fragment.
 
 ---
 
-## 2. Mobile App API Discovery (APK Decompilation)
+## 2. Embed and Syndication Endpoints
+
+The unauthenticated API a site exposes so that *other people's websites* can
+render its content. When a tweet is pasted into a blog post, the resulting
+`<blockquote>` plus widget script has to fetch that tweet's text, author,
+and timestamp from somewhere. That somewhere is
+`cdn.syndication.twimg.com/tweet-result`, and it returns clean JSON to
+anyone who asks.
+
+Generalize the move: **find the path the site built for third-party
+consumption, and use it instead of the path it built for its own users.**
+
+### Why it is reliably softer than the main site
+
+Not an oversight, a structural consequence of what an embed has to do:
+
+- **It cannot require auth.** The point is that a logged-out stranger on
+  someone else's blog sees the content. A session check would break the
+  product.
+- **It cannot require the site's own JS runtime.** It is called from a
+  foreign origin, so it needs permissive CORS and a stable contract.
+- **It usually lives on a different host** (`cdn.syndication.twimg.com`,
+  not `x.com`). Different host often means different WAF config, different
+  bot rules, and a different rate-limit budget from the main app. A UA or
+  Cloudflare blockade on the main domain can be entirely irrelevant here.
+- **The contract is frozen.** Third parties depend on the response shape,
+  so it changes far more slowly than internal APIs and survives redesigns:
+  the team rebuilding the feed does not get to break every embed on the
+  internet.
+- **The payload is already denormalized.** Embeds need one round trip, so
+  you tend to get the whole object rather than a fragment to stitch
+  together from three calls.
+
+That combination (no auth, stable, one request) ranks an embed endpoint
+above almost everything else in this file when it fits the job.
+
+### How to find one
+
+1. **Look for the embed or share affordance in the product UI.** Post menu
+   → "Embed this post" hands you an iframe URL or a script tag. That URL is
+   the endpoint, or one hop from it.
+2. **Load that snippet on a scratch HTML page and watch the network tab.**
+   The widget script fires the real data request. Use
+   `read_network_requests` and note the host, params, and any token.
+3. **Check the oEmbed standard first**, it costs one request:
+   ```bash
+   # Sites advertise oEmbed in the page head
+   curl -s "$URL" | grep -i 'json+oembed'
+   # → <link rel="alternate" type="application/json+oembed" href="...">
+   ```
+4. **Replay it with curl, logged out, cookies cleared.** This step is not
+   optional: plenty of "open" endpoints only worked because the browser
+   carried a session.
+5. **Poke the params.** In `?id=<id>&token=a`, a token that accepts a
+   single junk character is not a token, it is a cache-buster or a
+   vestigial anti-CSRF field. Drop params one at a time to find the true
+   minimum.
+
+### Known endpoints
+
+| Site | Endpoint |
+|------|----------|
+| X / Twitter | `cdn.syndication.twimg.com/tweet-result?id=<id>&token=a` |
+| YouTube | `youtube.com/oembed?url=<url>&format=json` |
+| Vimeo | `vimeo.com/api/oembed.json?url=<url>` |
+| Bluesky | `embed.bsky.app/oembed?url=<url>` |
+| SoundCloud | `soundcloud.com/oembed?format=json&url=<url>` |
+| Spotify | `open.spotify.com/oembed?url=<url>` |
+| Flickr | `flickr.com/services/oembed/?format=json&url=<url>` |
+| TikTok | `tiktok.com/oembed?url=<url>` |
+| WordPress | `/wp-json/oembed/1.0/embed?url=<url>` |
+| Reddit | `.json` suffix on any permalink (requires a real UA) |
+
+```python
+import httpx
+
+# One request, no auth, no headers, full object back
+r = httpx.get(
+    "https://cdn.syndication.twimg.com/tweet-result",
+    params={"id": tweet_id, "token": "a"},
+)
+tweet = r.json()
+tweet["text"], tweet["user"]["screen_name"], tweet["created_at"]
+```
+
+### Hard limits: retrieval, not discovery
+
+Two constraints decide whether this pattern helps at all:
+
+- **Keyed by an ID you must already have.** Embed endpoints answer "render
+  *this* item", never "list items". They solve retrieval, not discovery. If
+  the hard part of the job is finding which items exist, and the listing
+  surface is session-gated, an open embed endpoint does not help no matter
+  how open it is. Pair it with a separate discovery source (sitemap, RSS,
+  search, a public index page) that yields IDs.
+- **Public visibility only.** You get exactly what a logged-out stranger
+  would get. Nothing session-gated leaks through.
+
+Beyond that: undocumented means unversioned, so it can vanish without a
+deprecation notice (Instagram's oEmbed went from open to app-token-required
+this way). `robots.txt` and ToS still apply the same as any other route.
+And the rate-limit budget is often thinner than it looks, because the host
+is a CDN sized for cached embed traffic rather than for someone iterating a
+list, so pace accordingly.
+
+---
+
+## 3. Mobile App API Discovery (APK Decompilation)
 
 When the browser network tab and the JS bundles do not reveal the full
 API, the site's mobile app usually does. A native Android app ships a
@@ -197,7 +305,7 @@ minimal required set.
 
 ---
 
-## 3. Server-Rendered JSON Blobs
+## 4. Server-Rendered JSON Blobs
 
 Many frameworks embed the full page data as JSON in the initial HTML.
 This is often the easiest approach — one HTTP request, all data included.
@@ -384,7 +492,7 @@ for tag in soup.find_all("script"):
 
 ---
 
-## 4. CMS and Platform APIs
+## 5. CMS and Platform APIs
 
 If the site runs on a known platform, there's almost certainly a REST API.
 
@@ -476,7 +584,7 @@ Detection: `wix.com`, `parastorage.com`, `static.wixstatic.com`.
 
 ---
 
-## 5. GraphQL Endpoints
+## 6. GraphQL Endpoints
 
 ### Detection
 
@@ -511,7 +619,7 @@ well-tested and paginated.
 
 ---
 
-## 6. Structured Data in HTML
+## 7. Structured Data in HTML
 
 Many sites embed structured data for SEO. This is clean, reliable, and
 rarely changes.
@@ -541,7 +649,7 @@ data = extruct.extract(html, syntaxes=["json-ld", "microdata", "rdfa", "opengrap
 
 ---
 
-## 7. Data Attributes
+## 8. Data Attributes
 
 Modern frameworks often attach data to DOM elements via `data-` attributes.
 These are typically more stable than class names.
@@ -564,7 +672,7 @@ for elem in soup.find_all(attrs={"data-product-id": True}):
 
 ---
 
-## 8. Stable CSS Selectors
+## 9. Stable CSS Selectors
 
 Last resort for DOM-based scraping. Prefer semantic HTML elements
 over class names.
@@ -604,7 +712,7 @@ div > div > div > span  /* fragile nesting */
 
 ---
 
-## 9. Discovery Report Template
+## 10. Discovery Report Template
 
 After running discovery, produce a brief report for the user:
 

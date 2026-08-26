@@ -8,7 +8,9 @@ description: >
   recurring data collection, reverse-engineer a site's API, or find hidden data
   endpoints. Also trigger when the user mentions "scrape", "crawl", "extract
   from site", "web data", "pull data from URL", "scheduled scraping",
-  "monitor a page", or asks how to get data from a specific website.
+  "monitor a page", "embed endpoint", "oEmbed", "syndication endpoint", or
+  asks how to get data from a specific website or how to reach content
+  without logging in.
 ---
 
 # Web Scraper Skill
@@ -35,21 +37,27 @@ Discovery priority (highest to lowest):
 1. **Public/undocumented REST API** — look in XHR/fetch requests, especially
    on pagination or filter actions (page 2, sort, search). Often missed on
    initial page load.
-2. **GraphQL endpoint** — check for `/graphql`, `/gql`, or `__relay` in
+2. **Embed/syndication endpoint** — the no-auth JSON a site serves so other
+   websites can render its content (oEmbed, `cdn.syndication.twimg.com`,
+   "Embed this post" iframes). Often on a different host with different bot
+   rules from the main site, and contractually frozen because third parties
+   depend on it. Retrieval only: it renders an item whose ID you already
+   have, it cannot list items, so pair it with a separate source for IDs.
+3. **GraphQL endpoint** — check for `/graphql`, `/gql`, or `__relay` in
    network requests.
-3. **Server-rendered JSON blobs** — `__NEXT_DATA__`, `__NUXT__`,
+4. **Server-rendered JSON blobs** — `__NEXT_DATA__`, `__NUXT__`,
    `window.__INITIAL_STATE__`, `window.__DATA__`, Remix `__remixContext`,
    Gatsby `pageContext`, etc.
-4. **React Server Components (RSC)** — Next.js App Router sites use RSC
+5. **React Server Components (RSC)** — Next.js App Router sites use RSC
    instead of `__NEXT_DATA__`. Look for `?_rsc=` requests in the network
    tab. Only parse RSC directly if no cleaner source (JSON-LD, API) exists.
-5. **CMS/platform API** — WordPress REST (`/wp-json/wp/v2/`), Shopify
+6. **CMS/platform API** — WordPress REST (`/wp-json/wp/v2/`), Shopify
    Storefront API, Drupal JSON:API, Contentful, Strapi, Ghost, etc.
-6. **Structured data in HTML** — `<script type="application/ld+json">`,
+7. **Structured data in HTML** — `<script type="application/ld+json">`,
    microdata, RDFa.
-7. **data- attributes** — e.g., `data-product-id`, `data-price`,
+8. **data- attributes** — e.g., `data-product-id`, `data-price`,
    `data-sku`.
-8. **Stable CSS selectors** — semantic HTML elements (`<article>`, `<li>`,
+9. **Stable CSS selectors** — semantic HTML elements (`<article>`, `<li>`,
    `<table>`, `<time>`) over class names. Avoid framework-generated classes
    like `.css-1a2b3c` or `.MuiButton-root`.
 
@@ -125,6 +133,9 @@ Start
   │
   ├─ Run Discovery (Phase 1)
   │   ├─ API endpoint found? ──Yes──▶ Use httpx + JSON parsing
+  │   ├─ Embed/oEmbed endpoint? ──Yes──▶ Do you have item IDs already?
+  │   │   ├─ Yes ──▶ Use httpx + embed endpoint (no auth needed)
+  │   │   └─ No  ──▶ Keep looking for a listing source, then pair the two
   │   ├─ GraphQL endpoint?    ──Yes──▶ Use httpx + GraphQL queries
   │   ├─ JSON blob in HTML?   ──Yes──▶ Use httpx + regex/bs4 extraction
   │   ├─ RSC payload?         ──Yes──▶ Check if cleaner source exists
