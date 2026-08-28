@@ -95,10 +95,12 @@ CSS-filtered source photo: the right-hand mark must be a generated
 Copy `assets/field-notes.html` into the delivery directory, then delete all of
 its built-in examples. Keep one `data-variant="B"` sheet and retain the
 template's annotation CSS plus its `drawMarks()` script: these turn `.ul` runs
-into the deliberately wobbly printed lines. Put the factual entry in
+into a `.marks .mk--ul` overlay with deliberately wobbly printed lines. Put the factual entry in
 `.col--entry`, marking only factual phrases as, for example,
 `<span class="ul" data-ink="c1">1889</span>`; do not replace this renderer with
-a custom CSS underline. In the right-hand `.stack`, replace the small Mermaid
+a custom CSS underline, and specifically not a `.ul::after` pseudo-element.
+After the page loads, inspect the DOM: every `.ul` must have a corresponding
+`.marks .mk--ul` overlay. In the right-hand `.stack`, replace the small Mermaid
 plate with the generated stamp:
 
 ```html

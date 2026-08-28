@@ -32,6 +32,12 @@ class WikipediaFieldNotesTest(unittest.TestCase):
         self.assertIn('<span class="ul" data-ink="c1">', reference)
         self.assertIn("crimson", reference)
 
+    def test_route_requires_the_template_drawn_underline_renderer(self) -> None:
+        reference = (SKILL_ROOT / "references" / "wikipedia-field-notes.md").read_text()
+
+        self.assertIn("`.marks .mk--ul`", reference)
+        self.assertIn("not a `.ul::after`", reference)
+
 
 if __name__ == "__main__":
     unittest.main()
