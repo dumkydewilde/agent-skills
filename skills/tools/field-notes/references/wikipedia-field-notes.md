@@ -5,6 +5,10 @@ the template's **B** geometry: a dense typed record on the left, a modest
 rubber-stamp sketch on the lower right, and a small caption plus source credit
 below it. Do not add a new example to `assets/field-notes.html`.
 
+`assets/examples/amsterdam-centraal-field-notes.html` is a finished sheet from
+this exact flow — read it for the record's density, the underline markup, the
+stamp block, and the credit line before writing your own.
+
 ## 1. Gather the record
 
 Use the URL's page title with the REST summary endpoint for the subject, lead
@@ -67,6 +71,10 @@ summary of the article, not historical fiction:
 
 ## 4. Make a stamp from the source photo
 
+`assets/examples/amsterdam-centraal-source.jpg` and
+`amsterdam-centraal-rubber-stamp.png` are this step's input and output, side by
+side; `examples.md` lists what the pass dropped.
+
 Use the Commons lead image as an **image-input reference**, not as the final
 right-hand image. Ask an image-to-image model for a transparent or removable
 flat-background rubber-stamp sketch. Retain the subject's distinctive silhouette
@@ -93,7 +101,11 @@ CSS-filtered source photo: the right-hand mark must be a generated
 ## 5. Build the standalone sheet
 
 Copy `assets/field-notes.html` into the delivery directory, then delete all of
-its built-in examples. Keep one `data-variant="B"` sheet and retain the
+its built-in examples. Keep one `data-variant="B"` sheet, **inside its
+`<section class="slide">` and its `<main class="deck">`** — the paper is
+painted on the slide, so a sheet lifted out of one is printed on nothing. A
+deck of one is the standalone sheet. Delete the `.home` link, which points at
+an index this delivery does not have. Retain the
 template's annotation CSS plus its `drawMarks()` script: these turn `.ul` runs
 into a `.marks .mk--ul` overlay with deliberately wobbly printed lines. Put the factual entry in
 `.col--entry`, marking only factual phrases as, for example,

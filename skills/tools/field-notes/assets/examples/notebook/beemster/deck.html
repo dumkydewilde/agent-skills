@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Field Notes</title>
+<title>Beemster Polder &mdash; Field Notes</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
@@ -23,6 +23,7 @@
 :root{
   --paper:       #efe9dd;   /* warm off-white stock       */
   --paper-shade: #e4dccc;
+  --desk:        #cdc7bb;   /* what the notebook lies on  */
   --ink:         #2b2b2b;   /* lettering, outlines        */
   --line:        #5a6068;   /* connectors between blocks  */
 
@@ -38,12 +39,83 @@
 }
 
 *{box-sizing:border-box;}
-html{background:#cfc9bd;}
+html,body{height:100%;}
 body{
-  margin:0; padding:40px 20px; display:flex; flex-direction:column;
-  align-items:center; gap:48px;
+  margin:0; overflow:hidden;
+  background:var(--desk);
   font-family:var(--type); color:var(--ink);
 }
+
+/* ============================================================
+   THE DECK
+   Sheets are slides, not cards laid out on a desk. One sheet fills
+   the screen, you swipe to the next, and the paper runs to every
+   edge: on a tablet there is nothing on screen but the paper and
+   the note.
+
+   Snapping is CSS, not a gesture handler. A touch drag, a trackpad
+   swipe and a scripted scroll then all land the same way, and none
+   of them needs JavaScript to feel right.
+   ============================================================ */
+.deck{
+  display:flex; width:100%;
+  /* dvh, not vh: a tablet's address bar shrinks the visible viewport, and a
+     sheet sized to the layout viewport hangs off the bottom of it. */
+  height:100vh; height:100dvh;
+  overflow-x:auto; overflow-y:hidden;
+  scroll-snap-type:x mandatory; scroll-behavior:smooth;
+  overscroll-behavior-x:contain;
+  scrollbar-width:none;
+}
+.deck::-webkit-scrollbar{display:none;}
+
+/* The desk the notebook lies on. The margin is the whole point of it: a
+   sheet bled to the screen edge is a background image, and a sheet with
+   a hand's width of surface around it and a shadow under it is a page
+   you are looking at. Keep it small — this is a page held open, not a
+   card floating in a gallery.
+
+   container-type:size so the sheet can be measured against the padded
+   box in cq units. Sizing it in vw/vh instead would ignore the margin
+   and push the sheet's corners under it. */
+.slide{
+  flex:0 0 100%; height:100%;
+  scroll-snap-align:center; scroll-snap-stop:always;
+  display:grid; place-items:center;
+  padding:4vmin;
+  container-type:size;
+  background:var(--desk);
+}
+
+/* The way back to the notebook. Fixed to the screen rather than placed
+   on a sheet, because it belongs to the deck and not to any one note —
+   it sits out on the desk, in the margin, off the paper. Quiet enough
+   to be scenery until you look for it. Delete it on a standalone
+   sheet. */
+.home{
+  position:fixed; top:1.5vmin; left:2.2vmin; z-index:5;
+  font-size:clamp(9px,1.1vmin,12px); letter-spacing:.22em;
+  text-transform:uppercase; text-decoration:none;
+  color:color-mix(in srgb, var(--ink) 32%, transparent);
+}
+.home:hover,.home:focus-visible{color:var(--ink);}
+
+/* ============================================================
+   TURN IT SIDEWAYS
+   A sheet is the largest 4:3 page that fits, so on a phone held
+   upright it is 359px wide and every measurement on it — all of
+   them fractions of that width — lands at four or five pixels.
+   There is no layout that fixes it: the page is landscape, and the
+   answer is to turn the phone. Say so, rather than serving type
+   nobody can read and letting it look broken.
+   ============================================================ */
+.turn{
+  display:none;
+  position:fixed; inset:auto 0 2.5vmin; z-index:6; margin:0;
+  text-align:center; font-size:11px; letter-spacing:.22em;
+  text-transform:uppercase; color:color-mix(in srgb, var(--ink) 45%, transparent);
+}
+@media (max-width:560px) and (orientation:portrait){.turn{display:block;}}
 
 /* ============================================================
    THE SHEET
@@ -51,10 +123,16 @@ body{
    nothing is printed on it.
    ============================================================ */
 .sheet{
-  position:relative; width:min(1040px,100%); aspect-ratio:4/3;
+  position:relative; aspect-ratio:4/3;
+  /* The largest 4:3 page that fits inside the slide's margin. cq units,
+     not vw/vh: they resolve against the slide's padded box, so the
+     margin is respected instead of being covered. */
+  width:min(100cqw, 133.334cqh);
   display:grid; overflow:hidden; color:var(--ink);
   /* Size container so the cqh caps on the plates resolve against the
-     sheet's own height instead of the viewport. */
+     sheet's own height instead of the viewport. Nested inside .slide's
+     container: cq units used ON the sheet measure the slide, cq units
+     used on anything INSIDE it measure the sheet. */
   container-type:size;
   background-color:var(--paper);
   /* handling marks, then fibers, then grain */
@@ -65,10 +143,22 @@ body{
     repeating-linear-gradient(0deg, rgba(120,100,75,.035) 0 1px, transparent 1px 3px),
     url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.72' numOctaves='4' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='220' height='220' filter='url(%23n)' opacity='.35'/></svg>");
   background-blend-mode:normal,normal,normal,normal,multiply;
-  box-shadow:0 1px 0 rgba(255,255,255,.6) inset, 0 18px 40px -22px rgba(60,50,35,.55);
+  /* A lit top edge, a tight contact shadow where the page meets the
+     desk, and one soft cast shadow. Three cheap cues, and the page
+     stops being a rectangle of colour. */
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.55) inset,
+    0 2px 3px rgba(60,50,35,.10),
+    0 16px 36px -20px rgba(60,50,35,.55);
   /* Pin the single row: an implicit auto row grows to fit a tall plate and
      pushes the bottom-aligned columns out through overflow:hidden. */
   grid-template-rows:minmax(0,1fr);
+  /* Every measurement on a sheet is a fraction of the sheet's own width, so
+     one reads the same on a 1024px tablet and a 2560px display instead of
+     dwindling to a speck of 12px type in a huge paper field. 1 --px is one
+     pixel at the 1040px reference width; the design numbers below are
+     unchanged, they are just no longer absolute. */
+  --px: calc(100cqw / 1040);
 }
 .sheet[data-variant="A"]{grid-template-columns:58% 42%;}
 .sheet[data-variant="B"]{grid-template-columns:58% 42%;}
@@ -79,7 +169,7 @@ body{
 .photo-missing{
   width:100%;height:100%;display:grid;place-items:center;
   background:var(--paper-shade);color:color-mix(in srgb, var(--ink) 35%, transparent);
-  font-size:11px;letter-spacing:.18em;text-transform:uppercase;
+  font-size:calc(11*var(--px));letter-spacing:.18em;text-transform:uppercase;
 }
 
 /* ============================================================
@@ -139,7 +229,7 @@ body{
   width:74%;aspect-ratio:4/3;display:grid;place-items:center;
   border:1px dashed color-mix(in srgb, var(--ink) 22%, transparent);
   color:color-mix(in srgb, var(--ink) 30%, transparent);
-  font-size:10px;letter-spacing:.2em;text-transform:uppercase;
+  font-size:calc(10*var(--px));letter-spacing:.2em;text-transform:uppercase;
 }
 
 /* ============================================================
@@ -238,7 +328,7 @@ body{
 }
 .fig figcaption{
   margin:0;text-align:center;
-  font-size:9px;line-height:1.5;letter-spacing:.14em;text-transform:uppercase;
+  font-size:calc(9*var(--px));line-height:1.5;letter-spacing:.14em;text-transform:uppercase;
   color:var(--ink);
 }
 .fig figcaption .n{display:block;color:color-mix(in srgb, var(--ink) 55%, transparent);}
@@ -252,9 +342,9 @@ body{
 .col--entry{padding:9% 6% 9% 9%;}          /* B, left: the written entry */
 .col--bottom{justify-content:flex-end;}    /* right-hand columns sit low */
 
-.heading{font-size:13px;letter-spacing:.16em;margin:0 0 1.4em;}
-.body{font-size:12.5px;line-height:2.05;margin:0;white-space:pre-wrap;text-wrap:pretty;}
-.caption{font-size:12px;line-height:1.95;margin:0;white-space:pre-line;}
+.heading{font-size:calc(13*var(--px));letter-spacing:.16em;margin:0 0 1.4em;}
+.body{font-size:calc(12.5*var(--px));line-height:2.05;margin:0;white-space:pre-wrap;text-wrap:pretty;}
+.caption{font-size:calc(12*var(--px));line-height:1.95;margin:0;white-space:pre-line;}
 .caption .name{letter-spacing:.16em;}
 
 /* A and B put the caption directly beneath the plate, the pair sitting on the
@@ -318,16 +408,37 @@ body{
 /* Circled, the way you ring a term you mean to come back to. */
 .mk--ring{border:1.6px solid var(--mark);border-radius:50%;}
 
-figcaption{
-  font-size:10px;letter-spacing:.2em;text-transform:uppercase;
-  color:#6b6257;text-align:center;margin-top:10px;
-}
-
+/* Printing takes the deck apart again: one sheet per page, in order. */
 @media print{
-  html,body{background:#fff;}
-  body{padding:0;gap:0;}
-  .sheet{width:100%;box-shadow:none;page-break-after:always;}
-  figcaption{display:none;}
+  /* Landscape, and no page margin, because the page IS the sheet. A4 is
+     1.414:1 and a sheet is 4:3, so the sheet is fitted to the page's height
+     and the difference stays as white at the sides — cropping a sheet to the
+     paper would cut the whitespace the layout is made of. */
+  @page{size:A4 landscape;margin:0;}
+  html,body{height:auto;overflow:visible;background:#fff;}
+  .deck{display:block;height:auto;overflow:visible;scroll-snap-type:none;}
+  /* No desk and no margin on paper: the page IS the sheet.
+
+     container-type:normal is what makes this paginate. A size container is
+     size-contained, so its height stops being derived from its contents and
+     `height:auto` resolves to ZERO — every sheet then overflows a zero-height
+     slide, they all stack at the same origin, and the whole deck prints as one
+     page with one sheet visible on it. On paper nothing needs to measure the
+     slide, so the containment goes. */
+  .slide{display:block;height:auto;padding:0;background:none;
+         container-type:normal;page-break-after:always;break-after:page;}
+  .slide:last-child{page-break-after:auto;break-after:auto;}
+  /* Millimetres, not vh or %: in paged layout a viewport unit has no viewport
+     to resolve against, every slide collapses to nothing, and the deck prints
+     as one page with three sheets stacked on top of each other. A4 landscape
+     is 297×210, so 270×202.5 is the largest 4:3 sheet that fits with a hair of
+     tolerance for a printer that rounds.
+
+     The sheet keeps container-type:size, so --px still resolves against the
+     sheet — at 270mm that is 1020px, and the type prints at its design size. */
+  .slide .sheet{width:270mm;height:202.5mm;margin:0 auto;box-shadow:none;}
+  .home{display:none;}
+  .turn{display:none !important;}
 }
 </style>
 </head>
@@ -385,11 +496,24 @@ figcaption{
 </defs></svg>
 
 
+<!-- The way back to the notebook this deck belongs to. Delete it when the
+     deck is a standalone sheet with nothing to return to. -->
+<a class="home" href="index.html">&larr;&nbsp; Beemster Polder</a>
+
+<!-- Shown only on a phone held upright, where a 4:3 page has nowhere to go.
+     Out on the desk, like the way back: it belongs to the deck, not a sheet. -->
+<p class="turn">Turn sideways to read</p>
+
 <!-- ============================================================
-     VARIANT C — plate left, narrow text column right
-     Blocks are filled by class: :::c1 .. :::c5.
+     THE DECK
+     One <section class="slide"> per sheet, in reading order. Give each
+     an id: it is the deck's own anchor (field-notes.html#rome), which
+     is what a notebook index links to and what the address bar keeps
+     current as you swipe.
      ============================================================ -->
-<figure style="margin:0;width:min(1040px,100%)">
+<main class="deck">
+
+<section class="slide" id="molengang">
 <div class="sheet" data-variant="C">
 
   <div class="plate plate--large">
@@ -404,59 +528,18 @@ figcaption{
   </div>
 
   <div class="col col--bottom">
-    <p class="caption jitter"><span class="name">BEEMSTER POLDER</span>
+    <p class="caption jitter"><span class="name">MOLENGANG</span>
 No. 11
 lift / stage / gain
-2026</p>
+1612</p>
     <hr class="rule">
-    <p class="body jitter">Four stages carry the water from the floor of the polder to the ring canal. Each block is one stage, drawn to the lift it does.</p>
+    <p class="body jitter">Four stages carry the water from the floor of the polder to the ring canal. Each block is one stage, drawn to the lift it does. No single mill could raise water the full <strong>3.5 metres</strong>, so they were built in series and the gain was divided between them.</p>
   </div>
 
 </div>
-<figcaption>Variant C — plate-primary</figcaption>
-</figure>
+</section>
 
-
-<!-- ============================================================
-     VARIANT B — written entry left, small plate right
-     ============================================================ -->
-<figure style="margin:0;width:min(1040px,100%)">
-<div class="sheet" data-variant="B">
-
-  <div class="col col--entry">
-    <p class="heading jitter">LUDWIG WITTGENSTEIN  ·  2026</p>
-    <p class="body jitter">Considered by some to be <mark class="hl">the greatest philosopher of the 20th century</mark>, Ludwig Wittgenstein played a central, if controversial, role in mid-20th-century analytic philosophy. He continues to influence, and incur debate in, current philosophical thought in topics as diverse as logic and language, perception and intention, ethics and religion, aesthetics and culture, and even political thought. Furthermore, a central factor in investigating Wittgenstein's works is the multifarious nature of the project of interpreting them; this leads to untold difficulties in the ascertainment of his philosophical substance and method.
-
-Originally, there were two commonly recognized stages of Wittgenstein's thought — the early and the later — both of which were taken to be pivotal in their respective periods. In this orthodox two-stage interpretation, it is commonly acknowledged that the early Wittgenstein is epitomized in his <span class="ul" data-ink="c1">Tractatus Logico-Philosophicus</span>. By showing the application of modern logic to metaphysics, via language, he provided new insights into the relations between world, thought, and language and thereby into the nature of philosophy. It is the later Wittgenstein, mostly recognized in the <span class="ring" data-ink="c4">Philosophical Investigations</span>, who took the more revolutionary step in critiquing all of traditional philosophy including its climax in his own early work. The nature of his new philosophy is heralded as <mark class="hl" data-ink="c3">anti-systematic through and through</mark>, yet still conducive to genuine philosophical understanding of traditional problems. In more recent scholarship, <span class="ul" data-ink="c1">this division has been questioned</span>: some interpreters have claimed a certain unity between all stages of his thought, while others talk of a more nuanced division, adding stages such as the middle Wittgenstein and the post-later Wittgenstein.</p>
-  </div>
-
-  <div class="stack">
-    <div class="plate plate--small">
-      <pre class="mermaid">
-        %%{init:{"flowchart":{"curve":"linear","nodeSpacing":26,"rankSpacing":32}}}%%
-        flowchart TB
-          S["source"]:::c4 --> W{"watermark"}:::c1
-          W -->|"NULL"| F["full scan"]:::c2
-          W -->|"ts"| I["increment"]:::c3
-          F --> T["mart"]:::c5
-          I --> T
-      </pre>
-    </div>
-    <p class="caption jitter">No. 03
-logic / language / method</p>
-  </div>
-
-</div>
-<figcaption>Variant B — notes-primary</figcaption>
-</figure>
-
-
-<!-- ============================================================
-     GRID FIELD — the same style, plate ruled as graph paper
-     Opt in with data-plate="grid" when the plate carries a plotted
-     series rather than blocks.
-     ============================================================ -->
-<figure style="margin:0;width:min(1040px,100%)">
+<section class="slide" id="land-drained">
 <div class="sheet" data-variant="C">
 
   <div class="plate plate--large" data-plate="grid">
@@ -470,105 +553,62 @@ logic / language / method</p>
   </div>
 
   <div class="col col--bottom">
-    <p class="caption jitter"><span class="name">BEEMSTER POLDER</span>
+    <p class="caption jitter"><span class="name">LAND DRAINED</span>
 No. 12
-gain / stall / gain
-2026</p>
+hectare / year / rise
+1870-1900</p>
     <hr class="rule">
-    <p class="body jitter">Hectares held under drainage, 1870 to 1900. The stall through the seventies is the wind failing; the climb after 1885 is the steam engine.</p>
+    <p class="body jitter">Reclaimed hectares per five-year period. The curve turns in <mark class="hl">1885</mark>, the year the steam house took the deepest lift off the mills.</p>
   </div>
 
 </div>
-<figcaption>Grid field — plotted series</figcaption>
-</figure>
+</section>
 
-
-<!-- ============================================================
-     FIGURE PLATE — icons as a small pictorial diagram
-     Font Awesome supplies the shapes; class="hatch" fills them with
-     ruled diagonals so they read as engraved tone rather than as
-     solid interface glyphs. Inline .ic clarifies a term in the text.
-     ============================================================ -->
-<figure style="margin:0;width:min(1040px,100%)">
+<section class="slide" id="works-and-parts">
 <div class="sheet" data-variant="C">
 
   <div class="plate plate--large">
     <div class="figs" style="--cols:3">
-
       <figure class="fig" data-ink="c5">
         <span class="frame"><i class="glyph hatch fa-solid fa-fan"></i></span>
         <figcaption><span class="n">Fig. 1</span>Wind stage</figcaption>
       </figure>
-
       <figure class="fig" data-ink="c4">
         <span class="frame"><i class="glyph hatch fa-solid fa-water"></i></span>
         <figcaption><span class="n">Fig. 2</span>Storage basin</figcaption>
       </figure>
-
       <figure class="fig" data-ink="c1">
-        <span class="frame"><i class="glyph hatch fa-solid fa-arrow-up-from-water-pump"></i></span>
+        <span class="frame"><i class="glyph hatch fa-solid fa-arrows-spin"></i></span>
         <figcaption><span class="n">Fig. 3</span>Scoop wheel</figcaption>
       </figure>
-
       <figure class="fig" data-ink="c3">
         <span class="frame"><i class="glyph hatch fa-solid fa-ruler-vertical"></i></span>
         <figcaption><span class="n">Fig. 4</span>Head of lift</figcaption>
       </figure>
-
       <figure class="fig" data-ink="c2">
         <span class="frame"><i class="glyph hatch fa-solid fa-industry"></i></span>
         <figcaption><span class="n">Fig. 5</span>Steam house</figcaption>
       </figure>
-
       <figure class="fig" data-ink="c5">
         <span class="frame"><i class="glyph hatch fa-solid fa-seedling"></i></span>
         <figcaption><span class="n">Fig. 6</span>Reclaimed land</figcaption>
       </figure>
-
     </div>
   </div>
 
   <div class="col col--bottom">
-    <p class="caption jitter"><span class="name">BEEMSTER POLDER</span>
+    <p class="caption jitter"><span class="name">WORKS &AMP; PARTS</span>
 No. 15
 parts / stages / plant
-2026</p>
+1612</p>
     <hr class="rule">
     <p class="body jitter">The six parts of a staged drainage, as found on the ground. Wind <i class="ic fa-solid fa-fan" aria-hidden="true"></i> drove every stage until 1885; after that the steam house <i class="ic fa-solid fa-industry" data-ink="c1" aria-hidden="true"></i> took the deepest lift.</p>
   </div>
 
 </div>
-<figcaption>Figure plate — icons</figcaption>
-</figure>
+</section>
 
-
-<!-- ============================================================
-     VARIANT A — photograph left, stamp + caption right
-     Swap both src attributes. A's mark is pictorial, not a diagram,
-     so mermaid is the wrong tool for it: generate the stamp with the
-     image prompt (references/prompt-templates.md) and drop it in here.
-     ============================================================ -->
-<figure style="margin:0;width:min(1040px,100%)">
-<div class="sheet" data-variant="A">
-
-  <img class="photo" src="photo.jpg" alt=""
-       onerror="this.outerHTML='&lt;div class=&quot;photo-missing&quot;&gt;photograph&lt;/div&gt;'">
-
-  <div class="stack">
-    <div class="plate">
-      <img class="mark" src="stamp.png" alt=""
-           onerror="this.replaceWith(Object.assign(document.createElement('div'),
-                    {className:'mark-missing',textContent:'stamp'}))">
-    </div>
-    <p class="caption jitter"><span class="name">ROME</span>
-No. 02
-arch / pine / dusk
-2026</p>
-  </div>
-
-</div>
-<figcaption>Variant A — photo-stamp</figcaption>
-</figure>
+</main>
 
 
 <script type="module">
@@ -598,6 +638,11 @@ const dedent = text => {
   const pad = Math.min(...lines.filter(l => l.trim()).map(l => l.match(/^ */)[0].length));
   return lines.map(l => l.slice(pad)).join("\n");
 };
+
+/* The CSS --px, in JS: how big one reference pixel is on the sheet this
+   element sits in. The stylesheet sizes type as a fraction of the sheet's
+   width, and anything measured here has to agree with it. */
+const unit = el => (el.closest(".sheet")?.clientWidth || 1040) / 1040;
 
 /* The padded box a plate has to fill. */
 const boxOf = plate => {
@@ -716,8 +761,11 @@ function fitPlates() {
     const vb = svg.viewBox.baseVal;
     if (!vb || !vb.width || !vb.height || boxW <= 0 || boxH <= 0) continue;
     /* Cap the upscale: the plate's lettering scales with it, and a plate with
-       paper around it is the intended look, not one stretched to the margins. */
-    const scale = Math.min(boxW / vb.width, boxH / vb.height, 2.2);
+       paper around it is the intended look, not one stretched to the margins.
+       The cap is a fraction of the sheet, not an absolute, for the reason
+       --px exists: at a fixed 2.2 a plate that fills a 1040px sheet would sit
+       marooned in the middle of a 2560px one. */
+    const scale = Math.min(boxW / vb.width, boxH / vb.height, 2.2 * unit(plate));
     svg.removeAttribute("width");
     svg.removeAttribute("height");
     svg.style.maxWidth = "none";
@@ -762,22 +810,30 @@ for (const el of document.querySelectorAll(".jitter")) {
    overflow:hidden silently eats the last lines mid-sentence. Give up leading
    first (2.05 is a luxury that only short notes can afford), then size. Runs
    after the jitter pass so it measures the final DOM. */
-const ENTRY = { size: 12.5, minSize: 8.5, leading: [2.05, 1.95, 1.85, 1.75, 1.65] };
+const ENTRY = { size: 12.5, minSize: 8.5, step: 0.25, leading: [2.05, 1.95, 1.85, 1.75, 1.65] };
 
 function fitEntries() {
   for (const col of document.querySelectorAll(".col--entry")) {
     const body = col.querySelector(".body");
     if (!body) continue;
 
+    /* Every size here is in reference pixels, scaled to this sheet — the same
+       conversion the stylesheet does with --px. Fitting in absolute pixels
+       would give a full-screen sheet a wall of tiny type it never needed to
+       shrink to. */
+    const px = unit(col);
+    const start = ENTRY.size * px;
+    const floor = ENTRY.minSize * px;
+
     /* Always back to the default first, so a fit is computed from scratch
        rather than compounding a previous pass. */
-    body.style.fontSize = ENTRY.size + "px";
+    body.style.fontSize = start + "px";
     body.style.lineHeight = ENTRY.leading[0];
 
     /* A collapsed or not-yet-laid-out column reports a near-zero height, and
        fitting against that drives the type straight to the floor and leaves it
        there. Bail to the default instead and let the next pass fit it. */
-    if (col.clientHeight < 120) continue;
+    if (col.clientHeight < Math.max(60, 120 * px)) continue;
 
     const fits = () => col.scrollHeight <= col.clientHeight;
     if (fits()) continue;
@@ -786,9 +842,9 @@ function fitEntries() {
       body.style.lineHeight = lh;
       if (fits()) break;
     }
-    let size = ENTRY.size;
-    while (!fits() && size > ENTRY.minSize) {
-      size = +(size - 0.25).toFixed(2);
+    let size = start;
+    while (!fits() && size > floor) {
+      size = +(size - ENTRY.step * px).toFixed(3);
       body.style.fontSize = size + "px";
     }
 
@@ -797,7 +853,7 @@ function fitEntries() {
        plate needs to give up some of the sheet. */
     if (!fits()) {
       console.warn(
-        `Entry overflows its column at the ${ENTRY.minSize}px floor by ` +
+        `Entry overflows its column at the ${ENTRY.minSize}px reference floor by ` +
         `${col.scrollHeight - col.clientHeight}px. Cut the text or move it to ` +
         `variant C's wider column.`, col);
     }
@@ -898,6 +954,59 @@ function drawMarks() {
   }
 }
 
+/* ============================================================
+   THE DECK
+   Swiping is the browser's job — scroll-snap already does it, on
+   touch and trackpad alike. What is left is the keyboard, and
+   keeping the deck and the address bar agreed on which sheet is
+   showing, so a note can be linked to and an index can send you
+   straight to it.
+   ============================================================ */
+const deck = document.querySelector(".deck");
+if (deck) {
+  const slides = [...deck.querySelectorAll(".slide")];
+  const showing = () => Math.round(deck.scrollLeft / deck.clientWidth);
+  const go = n => deck.scrollTo({
+    left: Math.max(0, Math.min(slides.length - 1, n)) * deck.clientWidth,
+    behavior: "smooth"
+  });
+
+  /* Arriving on #rome must not animate across every sheet in between, so the
+     jump is made with smooth scrolling switched off and switched back after
+     the frame lands. */
+  const jump = () => {
+    const i = slides.findIndex(s => s.id === decodeURIComponent(location.hash.slice(1)));
+    if (i < 0) return;
+    deck.style.scrollBehavior = "auto";
+    deck.scrollLeft = i * deck.clientWidth;
+    requestAnimationFrame(() => { deck.style.scrollBehavior = ""; });
+  };
+  jump();
+  addEventListener("hashchange", jump);
+
+  addEventListener("keydown", e => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const step = { ArrowRight: 1, PageDown: 1, " ": 1, ArrowLeft: -1, PageUp: -1 }[e.key];
+    if (step) go(showing() + step);
+    else if (e.key === "Home") go(0);
+    else if (e.key === "End") go(slides.length - 1);
+    else return;
+    e.preventDefault();
+  });
+
+  /* replaceState, not pushState: swiping through a deck should not fill the
+     back button with every sheet you passed on the way. */
+  let settle;
+  deck.addEventListener("scroll", () => {
+    clearTimeout(settle);
+    settle = setTimeout(() => {
+      const id = slides[showing()]?.id;
+      if (id && decodeURIComponent(location.hash.slice(1)) !== id)
+        history.replaceState(null, "", "#" + id);
+    }, 140);
+  }, { passive: true });
+}
+
 /* Metrics have to be final before anything is measured: Courier Prime arrives
    over the network, and laying marks out against fallback metrics puts every
    sweep in the wrong place. */
@@ -905,6 +1014,24 @@ await document.fonts.ready;
 fitEntries();
 drawMarks();
 addEventListener("resize", () => { fitEntries(); drawMarks(); });
+</script>
+
+<!-- Opened by double-click rather than served, this page silently loses every
+     diagram: the module above never runs, because importing a module from
+     file:// is the thing browsers refuse. Say so on the desk, since a sheet
+     with its plate missing looks like a sheet that was built wrong.
+
+     A classic script, deliberately: a module here would fail for the same
+     reason and take the warning with it. -->
+<script>
+if (location.protocol === "file:") {
+  document.body.insertAdjacentHTML("afterbegin",
+    '<p style="position:fixed;top:0;left:0;right:0;z-index:9;margin:0;' +
+    'padding:.6em 1em;text-align:center;font:400 12px/1.5 \'Courier Prime\',' +
+    'monospace;letter-spacing:.12em;color:#2b2b2b;background:#f0b62b">' +
+    'SERVE THIS OVER HTTP &mdash; from the filesystem the diagrams cannot ' +
+    'load. &nbsp;python3 -m http.server</p>');
+}
 </script>
 </body>
 </html>

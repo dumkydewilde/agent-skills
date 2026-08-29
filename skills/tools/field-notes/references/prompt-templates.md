@@ -3,6 +3,9 @@
 Concatenate: `CANVAS` → `LAYOUT-*` → `MARK` → `INK-AND-PRINT` → `TYPE` → `AVOID`.
 Copy the block text verbatim into the prompt; fill every `{{slot}}`.
 
+For the register these blocks are aiming at, open the marks in
+`assets/examples/`; `examples.md` says what each one demonstrates.
+
 ---
 
 ## CANVAS (shared)

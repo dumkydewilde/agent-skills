@@ -1,18 +1,18 @@
 {
   "name": "tools",
-  "version": "0.1.0",
-  "description": "Personal general-purpose tools: conversation-history search, web-scraper, and field-notes-poster.",
+  "version": "0.2.0",
+  "description": "Personal general-purpose tools: conversation-history search, web-scraper, and field-notes.",
   "author": {
     "name": "Dumky de Wilde"
   },
   "skills": "./skills/",
   "interface": {
     "displayName": "Tools",
-    "shortDescription": "Personal tools: conversation history search and web scraping",
-    "longDescription": "Dumky's personal general-purpose agent tools: search local assistant conversation history across Claude/Codex/ChatGPT, and build resilient web scrapers via a discovery-then-script workflow.",
+    "shortDescription": "Personal tools: conversation history search, web scraping, and field notes",
+    "longDescription": "Dumky's personal general-purpose agent tools: search local assistant conversation history across Claude/Codex/ChatGPT, build resilient web scrapers via a discovery-then-script workflow, and turn markdown into field notes — a sheet, a notebook of them, or a shelf of notebooks.",
     "developerName": "Dumky de Wilde",
     "category": "Productivity",
-    "defaultPrompt": "Use the tools plugin to search local conversation history or build resilient web scrapers.",
+    "defaultPrompt": "Use the tools plugin to search local conversation history, build resilient web scrapers, or make field notes.",
     "capabilities": [
       "Read",
       "Write"

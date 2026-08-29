@@ -3,10 +3,14 @@
 `assets/field-notes.html` — one self-contained file. Copy it, delete the sheets
 you don't need, replace the content.
 
-It ships four sheets: variant C with a block diagram, variant B with a written
-entry and a small diagram, a variant C with a ruled grid field, and variant A
-with photo and stamp placeholders. The entry sheet also demonstrates the
-long-text fit and all three annotation marks.
+It ships five sheets: variant C with a block diagram, variant B with a written
+entry and a small diagram, a variant C with a ruled grid field, a plate of icon
+figures, and variant A with photo and stamp placeholders. The entry sheet also
+demonstrates the long-text fit and all three annotation marks.
+
+The file is a **deck**: each sheet is a slide filling the screen, and swiping
+moves between them. `references/notebooks.md` covers the deck and the index
+pages that open it; this file covers what is on a sheet.
 
 Serve over `http://`; ES module imports fail on `file://`. It fetches Mermaid 11
 and Courier Prime from the network.
@@ -141,6 +145,17 @@ bar**, so a plate whose categories each need their own colour has to be a
 flowchart of filled blocks rather than a bar chart. Bars plus a line on the same
 axes works well and is what the demo sheet does.
 
+## One scale
+
+A slide is as wide as the screen, so nothing on a sheet can be sized in
+absolute pixels: 12.5px type that reads well on a 1040px sheet is a speck on a
+2560px one. `.sheet` defines `--px` as one pixel at the 1040px reference width,
+every size on it is written `calc(12.5 * var(--px))`, and `fitEntries` and
+`fitPlates` convert the same way in JS through `unit()`. The design numbers are
+the ones they always were; they are just relative now. Add a size to a sheet and
+write it in `--px` — one absolute px among them looks correct at the reference
+width and is wrong at every other.
+
 ## Long entries
 
 The sheet is a fixed 4:3, so a long entry would run off the bottom and
@@ -221,3 +236,21 @@ name, because it has now caused three separate collapse bugs in this file.
 **Word-level `nowrap` spans in the jitter pass.** Per-character inline-blocks are
 all line-break opportunities, so without the word wrapper text breaks mid-stem
 ("in sta / ges").
+
+**`container-type:normal` and millimetres in `@media print`.** The two together
+are what makes a deck print as one sheet per page, and each on its own was a bug
+where the whole deck printed as a single page with every sheet stacked on the
+same spot. A size container is size-contained, so a slide's `height:auto`
+resolves to zero on paper and nothing takes up any room; and a viewport unit in
+paged layout has no viewport to resolve against, so `height:100vh` collapses the
+same way. On paper the sheet is `270mm × 202.5mm` — the largest 4:3 page inside
+A4 landscape — and the slide is a plain block that breaks after.
+
+**The sheet sized in `cq` units, not `vw`/`vh`.** A slide is padded, so the
+sheet has to be measured against the slide's padded box; sizing it to the
+viewport instead makes it exactly as large as the margin it is supposed to sit
+inside, and its corners go under the desk. `.slide` is a size container so that
+`min(100cqw, 133.334cqh)` on the sheet means "the largest 4:3 page that fits in
+the margin". The sheet is a size container too, and the nesting is deliberate:
+`cq` units *on* the sheet measure the slide, `cq` units *inside* it measure the
+sheet.
