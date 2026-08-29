@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Elsewhere &mdash; Field Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6/css/all.min.css" rel="stylesheet">
+<style>
+/* ============================================================
+   THE INDEX
+   The desk itself, with the notes laid out on it. Two indexes are
+   built from this one file, and they are the same desk holding two
+   different objects:
+
+     the NOTEBOOK — one small SHEET per note, each opening the deck
+       at that sheet;
+     the SHELF    — one MEMO BOOK per notebook, each opening its
+       index.
+
+   Neither index is printed on a page of its own. A single tall sheet
+   of paper carrying twelve notes is a document; twelve pieces of
+   paper lying on a desk is a notebook spread out in front of you,
+   and picking one up is what the whole navigation is.
+
+   So there is nothing on the desk but the objects and one quiet
+   line of type. A card is a mark and one line: the subject and its
+   year, the way a sheet's own heading reads. The number, the
+   keywords and the record are on the sheet, one tap away.
+   ============================================================ */
+:root{
+  --paper:       #efe9dd;   /* warm off-white stock       */
+  --paper-shade: #e4dccc;
+  --desk:        #cdc7bb;   /* what the notes lie on      */
+  --ink:         #2b2b2b;   /* lettering, outlines        */
+
+  /* The memo book: kraft cover stock, its darker fore-edge, and the
+     dull metal of a saddle staple. Nothing else on the shelf uses
+     them, and nothing on a sheet does. */
+  --kraft:       #c9a97b;
+  --kraft-shade: #b08f61;
+  --staple:      #8e8b83;
+
+  --c1:#c8203f;  /* crimson     */
+  --c2:#f0b62b;  /* goldenrod   */
+  --c3:#1f7a58;  /* viridian    */
+  --c4:#3f52a0;  /* ultramarine */
+  --c5:#3c2415;  /* brown       */
+
+  --type: "Courier Prime", "Courier New", ui-monospace, monospace;
+}
+
+*{box-sizing:border-box;}
+body{
+  /* The desk runs to every edge of the window, exactly as it does behind
+     a slide in the deck, so moving between the two does not change the
+     surface. The gutter is padding on the body rather than a margin on
+     anything inside it. */
+  margin:0;padding:0 4vmin;
+  font-family:var(--type); color:var(--ink);
+  background:var(--desk);
+}
+
+/* ============================================================
+   THE DESK
+   A width to lay things out on, and nothing else: no background,
+   no border, no shadow. Whatever is printed here is printed on the
+   objects, never on the surface under them.
+   ============================================================ */
+.desk{max-width:1480px;margin:0 auto;padding:5vmin 0 9vmin;}
+
+/* ============================================================
+   THE MASTHEAD
+   One line on the bare desk: where you are, and how much of it
+   there is. Set at a card's size, not as a headline — the name of
+   the notebook is the least surprising thing on its own index, and
+   giving it forty points of type spends the top of the desk saying
+   what the reader already knows. Muted, because it is a label on
+   the surface and not one of the notes.
+   ============================================================ */
+.masthead{
+  display:flex;align-items:baseline;flex-wrap:wrap;gap:.4em 1.8em;
+  margin:0 0 4.5vmin;
+}
+.title{
+  font-size:clamp(13px,1.15vw,18px);letter-spacing:.16em;
+  font-weight:400;text-transform:uppercase;margin:0;
+}
+.meta{
+  font-size:clamp(9px,.85vw,12px);letter-spacing:.2em;text-transform:uppercase;
+  margin:0;color:color-mix(in srgb, var(--ink) 55%, transparent);
+}
+/* The way back up: a notebook index returns to the shelf, the way a
+   deck returns to its index. Quiet enough to be scenery until you look
+   for it. Delete it on a standalone notebook. */
+.home{
+  font-size:clamp(9px,.85vw,12px);letter-spacing:.22em;
+  text-transform:uppercase;text-decoration:none;
+  color:color-mix(in srgb, var(--ink) 38%, transparent);
+}
+.home:hover,.home:focus-visible{color:var(--ink);}
+
+/* ============================================================
+   THE LAYOUT
+   Four across, which puts eight notes on a laptop screen and twelve
+   on a tablet. Set --cols on .cards to lay out a shelf of memo
+   books, which are portrait and narrow, more densely than sheets.
+
+   The gap is wide, because it is desk. Objects lying next to each
+   other need surface between them or they read as one grid of tiles.
+   ============================================================ */
+.cards{
+  display:grid;grid-template-columns:repeat(var(--cols,4),minmax(0,1fr));
+  gap:5vmin 4vmin;
+  /* start, not the grid default of stretch: a stretched item with an
+     aspect-ratio is stretched out of its ratio by whichever neighbour
+     took two lines for its title, and a sheet that is not 4:3 is not
+     the sheet the deck opens. */
+  align-items:start;
+}
+/* Four across is held down to phone width on purpose: a tablet in
+   landscape is 1024 wide, and dropping it to two columns there is what
+   makes an index feel like a phone app instead of a desk. */
+@media (max-width:820px){.cards{grid-template-columns:repeat(2,minmax(0,1fr));}}
+@media (max-width:520px){.cards{grid-template-columns:minmax(0,1fr);}}
+/* A memo book is half the width of a sheet, so it keeps a column longer:
+   two books side by side on a phone is still a shelf. */
+@media (max-width:820px){.cards--shelf{grid-template-columns:repeat(3,minmax(0,1fr));}}
+@media (max-width:520px){.cards--shelf{grid-template-columns:repeat(2,minmax(0,1fr));}}
+
+.card,.book{
+  color:inherit;text-decoration:none;min-width:0;
+  /* So everything printed on an object is sized against that object and
+     not against the window: the same card has to hold its proportions at
+     --cols:3 and --cols:4. */
+  container-type:inline-size;
+}
+
+/* ============================================================
+   A NOTE ON THE DESK
+   The card IS the sheet: the same 4:3 page, the same stock, the same
+   three shadow cues as a slide in the deck, shrunk to a hand's width.
+   There is no frame drawn round it, because the paper's own edge is
+   the frame, and no fill behind it, because it is not a card — it is
+   a piece of paper you can pick up.
+
+   1 --px is one pixel at the 340px reference width, the same rule the
+   sheet uses at 1040. If you add a size to a card, write it in --px.
+   ============================================================ */
+.card{
+  --px: calc(100cqw / 340);
+  aspect-ratio:4/3;
+  display:grid;grid-template-rows:minmax(0,1fr) auto;
+  padding:7% 7% 6%;gap:4%;
+  background-color:var(--paper);
+  /* handling marks, then fibers, then grain. Where the sheet has them
+     fixed, a card puts the two loudest on --hx/--hy so twelve pieces of
+     paper are not twelve prints of the same piece of paper. */
+  --hx:18%; --hy:8%;
+  background-image:
+    radial-gradient(70% 55% at var(--hx) var(--hy), rgba(255,255,255,.5), transparent 60%),
+    radial-gradient(50% 40% at 88% 92%, rgba(138,106,74,.10), transparent 65%),
+    radial-gradient(40% 30% at 96% 30%, rgba(138,106,74,.07), transparent 70%),
+    repeating-linear-gradient(0deg, rgba(120,100,75,.035) 0 1px, transparent 1px 3px),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.72' numOctaves='4' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='220' height='220' filter='url(%23n)' opacity='.35'/></svg>");
+  background-blend-mode:normal,normal,normal,normal,multiply;
+  /* A lit top edge, a tight contact shadow where the paper meets the
+     desk, and one soft cast shadow. The same three the sheet uses, so a
+     note is the same object here as it is full screen. */
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.55) inset,
+    0 1px 2px rgba(60,50,35,.10),
+    0 10px 22px -14px rgba(60,50,35,.55);
+  transition:box-shadow .18s, transform .18s;
+}
+/* Laid down by hand, not printed in a grid: a fraction of a degree each
+   way, and the row still reads as a row. Anything past a degree is a
+   scatter, and a scatter is a mood board. */
+.card:nth-child(4n+1){transform:rotate(-.45deg);}
+.card:nth-child(4n+2){transform:rotate(.30deg);}
+.card:nth-child(4n+3){transform:rotate(-.20deg);}
+.card:nth-child(4n+4){transform:rotate(.55deg);}
+/* Stock and handling vary across a pad. Two tones and three highlights
+   are enough to stop twelve identical rectangles reading as one texture,
+   and few enough that nobody reads them as a pattern. */
+.card:nth-child(3n+2){--paper:#ece5d6; --hx:78%; --hy:14%;}
+.card:nth-child(3n+3){--hx:30%; --hy:88%;}
+/* Picking one up: it straightens under the hand and its shadow deepens.
+   No scaling and no colour change — the object does not become a button. */
+.card:hover,.card:focus-visible{
+  transform:rotate(0deg);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.6) inset,
+    0 2px 3px rgba(60,50,35,.12),
+    0 18px 30px -16px rgba(60,50,35,.6);
+}
+.card:focus-visible{outline:1px solid var(--ink);outline-offset:3px;}
+
+/* The field the mark sits in. Nothing is drawn round it: on a sheet the
+   two regions meet on a paper edge, and here the paper edge is the only
+   frame there is. A positioning context for the stamp, and a centred
+   grid for the glyph that stands in for a diagram. */
+.card .frame{position:relative;min-height:0;display:grid;place-items:center;}
+
+/* The mark is taken OUT OF FLOW, and that is load-bearing. The 1fr row
+   gives the frame a height only for as long as nothing in flow demands
+   more, so an image asking for a percentage of that height is circular:
+   the percentage resolves to auto, the image's own height wins, and a
+   portrait stamp stretches the card until the row no longer lines up.
+   Out of flow, a stamp cannot grow the box it is measured against,
+   whatever shape it is. */
+.card .mark, .card .mark-missing{
+  position:absolute;inset:0;width:100%;height:100%;
+}
+/* A stamp sits ON the paper: multiply, so the stock shows through its
+   thin ink the way it does on a sheet. contain, never cover: a stamp
+   cropped to fill a box is no longer the mark that was made. */
+.card .mark{
+  object-fit:contain;
+  mix-blend-mode:multiply;filter:url(#gouache);
+}
+.card .mark-missing{
+  display:grid;place-items:center;
+  border:1px dashed color-mix(in srgb, var(--ink) 22%, transparent);
+  color:color-mix(in srgb, var(--ink) 30%, transparent);
+  font-size:calc(9*var(--px));letter-spacing:.2em;text-transform:uppercase;
+}
+
+/* Subject and year on one line, printed on the sheet, the way a sheet's
+   own heading reads. */
+.card-title{
+  font-size:calc(13*var(--px));line-height:1.5;letter-spacing:.1em;
+  font-weight:400;text-transform:uppercase;margin:0;
+}
+
+/* ============================================================
+   A NOTEBOOK ON THE DESK
+   A 3½ × 5½ memo book: kraft cover, black type, rounded fore-edge
+   corners, two saddle staples down the spine and a sliver of the
+   page block showing past the cover. That object is the whole
+   difference between the shelf and the notebook index — you are
+   picking up a book here and a loose sheet there, and you can see
+   which before you read a word.
+
+   It carries no mark. A memo book's cover is type: the notes are
+   inside it, and putting one of them on the front makes it a sheet
+   with a title rather than a book.
+   ============================================================ */
+.book{
+  --px: calc(100cqw / 240);
+  display:block;aspect-ratio:3.5/5.5;
+  transition:transform .18s;
+}
+.book:nth-child(3n+1){transform:rotate(-.4deg);}
+.book:nth-child(3n+3){transform:rotate(.5deg);}
+.book:hover,.book:focus-visible{transform:rotate(0deg);}
+.book:focus-visible{outline:none;}
+
+.cover{
+  position:relative;height:100%;
+  display:flex;flex-direction:column;justify-content:center;align-items:center;
+  /* The type block sits a little above centre, as it does on the real
+     cover: the bottom of a memo book is where a thumb goes. */
+  padding:0 12% 14%;
+  background-color:var(--kraft);
+  /* chipboard: a lit top-left, the saddle-stitched spine crease down the
+     left, a shaded fore-edge, vertical fibre, grain. The crease is what
+     says booklet rather than card — a stapled cover is folded, and the
+     fold catches the light differently from the rest of the board. */
+  background-image:
+    radial-gradient(80% 60% at 20% 10%, rgba(255,255,255,.30), transparent 65%),
+    linear-gradient(90deg,
+      rgba(90,62,30,.18) 0 1.5%,
+      rgba(255,255,255,.16) 1.5% 4%,
+      rgba(90,62,30,.10) 4% 6.5%,
+      transparent 6.5%),
+    linear-gradient(100deg, transparent 62%, rgba(90,62,30,.16) 100%),
+    repeating-linear-gradient(90deg, rgba(90,62,30,.05) 0 1px, transparent 1px 4px),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='220' height='220' filter='url(%23n)' opacity='.4'/></svg>");
+  background-blend-mode:normal,normal,normal,normal,multiply;
+  /* Square at the spine, rounded at the fore-edge: the corners a memo
+     book actually wears. */
+  border-radius:calc(2*var(--px)) calc(14*var(--px)) calc(14*var(--px)) calc(2*var(--px));
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.35) inset,
+    0 1px 2px rgba(60,50,35,.14),
+    0 12px 26px -14px rgba(60,50,35,.6);
+  transition:box-shadow .18s;
+}
+.book:hover .cover,.book:focus-visible .cover{
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.4) inset,
+    0 2px 4px rgba(60,50,35,.16),
+    0 20px 34px -16px rgba(60,50,35,.62);
+}
+.book:focus-visible .cover{outline:1px solid var(--ink);outline-offset:3px;}
+
+/* The page block: 48 leaves of the same stock as a sheet, showing as a
+   sliver past the cover's fore-edge and foot. Behind the cover, so the
+   cover's own rounded corner cuts across it. Shaded, not white — these
+   are the cut edges of a stack of pages seen end-on, and a white sliver
+   reads as a highlight or a peeling sticker instead. */
+.cover::before{
+  content:"";position:absolute;z-index:-1;
+  top:2%;right:calc(-2*var(--px));bottom:calc(-2*var(--px));left:6%;
+  background:linear-gradient(115deg, var(--paper-shade), #d9d1c0);
+  border-radius:0 calc(11*var(--px)) calc(11*var(--px)) 0;
+  box-shadow:0 1px 2px rgba(60,50,35,.22);
+}
+/* Two saddle staples, flat dull metal, set into the crease. Small: on
+   the real book they are a detail you notice second, and blown up they
+   become the loudest thing on a cover that is otherwise type. */
+.staple{
+  position:absolute;left:2.2%;width:2.4%;height:4.6%;
+  background:linear-gradient(90deg,#a5a29a,var(--staple) 45%,#7c7970);
+  box-shadow:0 0 0 .5px rgba(60,50,35,.3);
+}
+.staple:nth-of-type(1){top:22%;}
+.staple:nth-of-type(2){top:72%;}
+
+/* Cover type: black, bold, caps, centred. The name of the notebook is
+   the cover. */
+.cover-title{
+  margin:0;font-size:calc(25*var(--px));font-weight:700;
+  line-height:1.1;letter-spacing:.04em;text-transform:uppercase;
+  text-align:center;color:#1d1b18;text-wrap:balance;
+}
+/* What is in it, in the place the imprint line sits on the real cover. */
+.cover-line{
+  margin:calc(30*var(--px)) 0 0;font-size:calc(8.5*var(--px));
+  line-height:1.6;letter-spacing:.08em;text-align:center;
+  color:color-mix(in srgb, #1d1b18 78%, transparent);
+}
+
+/* ============================================================
+   GLYPH MARKS
+   A note whose sheet carries a diagram rather than a stamp has no
+   raster to show. A hatched Font Awesome glyph stands in for it —
+   the same treatment as a Fig. on a sheet, and for the same reason:
+   a solid silhouette is the single strongest modern tell, so the
+   glyph is filled with ruled diagonals and cut with a keyline
+   instead. See references/web-template.md for the numbers.
+   ============================================================ */
+/* Smaller than it wants to be. A glyph blown up to fill the paper reads
+   as an app icon; sat small on a sheet, with stock around it, it reads
+   as a specimen. */
+.glyph{--mark:var(--ink);color:var(--mark);line-height:1;filter:url(#engraved);
+       font-size:27cqw;}
+[data-ink="c1"] .glyph{--mark:var(--c1);}
+[data-ink="c2"] .glyph{--mark:var(--c2);}
+[data-ink="c3"] .glyph{--mark:var(--c3);}
+[data-ink="c4"] .glyph{--mark:var(--c4);}
+[data-ink="c5"] .glyph{--mark:var(--c5);}
+.glyph.hatch::before{
+  background-image:repeating-linear-gradient(
+    var(--hatch,48deg),
+    var(--mark) 0 1.1px,
+    transparent 1.1px 2.1px);
+  -webkit-background-clip:text;
+  background-clip:text;
+  color:transparent;
+  -webkit-text-stroke:.55px var(--mark);
+}
+/* Goldenrod is light enough to float off cream even at full ruling
+   density, so it gets a carbon keyline instead of its own. */
+[data-ink="c2"] .glyph.hatch::before{-webkit-text-stroke-color:var(--ink);}
+/* Vary the ruling down the grid, or the desk reads as one texture. */
+.card:nth-child(3n+1) .glyph{--hatch:42deg;}
+.card:nth-child(3n+2) .glyph{--hatch:-38deg;}
+.card:nth-child(3n+3) .glyph{--hatch:66deg;}
+
+/* Per-character jitter, as on a sheet. */
+.jitter .w{white-space:nowrap;}
+.jitter .w > span{display:inline-block;}
+
+/* Straighten everything and drop the desk: on paper there is no surface
+   under the notes, and a rotated card wastes the margin it tilts into. */
+@media print{
+  body{background:#fff;padding:0;}
+  .desk{padding:0;max-width:none;}
+  /* Two classes deep, or the nth-child tilts outrank this and print a
+     page of crooked cards. */
+  .cards .card,.cards .book,.card:hover{transform:none;}
+  .card{box-shadow:none;border:1px solid rgba(60,50,35,.35);break-inside:avoid;}
+  .cover{box-shadow:none;}
+}
+@media (prefers-reduced-motion:reduce){
+  .card,.book,.cover{transition:none;}
+}
+</style>
+</head>
+<body>
+
+<!-- SVG filters. Not rendered; referenced by CSS. Same two the sheet uses. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <filter id="gouache" x="-6%" y="-6%" width="112%" height="112%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.008 0.42" numOctaves="4"
+                  seed="17" result="streak"/>
+    <feColorMatrix in="streak" type="saturate" values="0" result="grey"/>
+    <feDisplacementMap in="SourceGraphic" in2="grey" scale="1.8"
+                       xChannelSelector="R" yChannelSelector="G" result="wob"/>
+    <feComponentTransfer in="grey" result="mod">
+      <feFuncA type="table" tableValues="0 0.30"/>
+    </feComponentTransfer>
+    <feComposite in="mod" in2="wob" operator="in" result="inside"/>
+    <feBlend in="wob" in2="inside" mode="multiply"/>
+  </filter>
+  <filter id="engraved" x="-8%" y="-8%" width="116%" height="116%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.09 0.14" numOctaves="2"
+                  seed="11" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="1.1"
+                       xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+</defs></svg>
+
+<div class="desk">
+
+  <header class="masthead">
+    <a class="home" href="../notebooks.html">&larr; Notebooks</a>
+    <h1 class="title jitter">Elsewhere</h1>
+    <p class="meta jitter">Two sheets</p>
+  </header>
+
+  <main class="cards" style="--cols:4">
+
+    <a class="card" href="deck.html#wittgenstein" data-ink="c4">
+      <span class="frame"><i class="glyph hatch fa-solid fa-comments"></i></span>
+      <h2 class="card-title jitter">Ludwig Wittgenstein &middot; 2026</h2>
+    </a>
+
+    <a class="card" href="deck.html#amsterdam-centraal">
+      <span class="frame">
+        <img class="mark" src="stamps/amsterdam-centraal.png" alt="" onerror="this.replaceWith(Object.assign(document.createElement('div'),
+                    {className:'mark-missing',textContent:'stamp'}))">
+      </span>
+      <h2 class="card-title jitter">Amsterdam Centraal &middot; 1889</h2>
+    </a>
+
+  </main>
+</div>
+
+
+<script type="module">
+/* Typewriter imperfection: nudge each glyph off the baseline and vary its ink
+   weight. The same pass the sheet runs, so an index and the deck it opens are
+   struck by the same machine. */
+const esc = c => c.replace(/[&<>]/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[m]));
+const jitter = text => text.split(/(\s+)/).map(tok => {
+  if (!tok) return "";
+  if (/^\s+$/.test(tok)) return tok;
+  const glyphs = [...tok].map(c => {
+    const dy = (Math.random() * 0.9 - 0.45).toFixed(2);
+    const op = (0.80 + Math.random() * 0.20).toFixed(2);
+    return `<span style="transform:translateY(${dy}px);opacity:${op}">${esc(c)}</span>`;
+  }).join("");
+  return `<span class="w">${glyphs}</span>`;
+}).join("");
+
+for (const el of document.querySelectorAll(".jitter")) {
+  const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+  const texts = [];
+  while (walker.nextNode()) texts.push(walker.currentNode);
+  for (const node of texts) {
+    if (!node.textContent.trim()) continue;
+    const tpl = document.createElement("template");
+    tpl.innerHTML = jitter(node.textContent);
+    node.replaceWith(tpl.content);
+  }
+}
+</script>
+</body>
+</html>

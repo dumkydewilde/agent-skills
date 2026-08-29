@@ -1,6 +1,6 @@
 {
   "name": "tools",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Personal general-purpose tools: conversation-history search, web-scraper, and field-notes.",
   "author": {
     "name": "Dumky de Wilde"
@@ -8,7 +8,7 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "Tools",
-    "shortDescription": "Personal tools: conversation history search, web scraping, and field notes",
+    "shortDescription": "Personal agent workflows",
     "longDescription": "Dumky's personal general-purpose agent tools: search local assistant conversation history across Claude/Codex/ChatGPT, build resilient web scrapers via a discovery-then-script workflow, and turn markdown into field notes — a sheet, a notebook of them, or a shelf of notebooks.",
     "developerName": "Dumky de Wilde",
     "category": "Productivity",

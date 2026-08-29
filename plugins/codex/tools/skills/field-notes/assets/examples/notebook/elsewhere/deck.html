@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Elsewhere &mdash; Field Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6/css/all.min.css" rel="stylesheet">
+<style>
+/* ============================================================
+   THE STYLE
+   One palette, one plate treatment. Warm off-white paper, carbon
+   lettering and outlines, and blocks filled flat in one of five spot
+   colours. There are no alternate palettes or period variants: the
+   sheet always looks like this.
+
+   The fills are OPAQUE. Gouache is an opaque medium: it covers the
+   paper rather than staining it, and at partial strength these hues
+   go chalky and pastel, which is the one thing that stops a block
+   reading as a painted plate. Texture comes from #gouache instead.
+   ============================================================ */
+:root{
+  --paper:       #efe9dd;   /* warm off-white stock       */
+  --paper-shade: #e4dccc;
+  --desk:        #cdc7bb;   /* what the notebook lies on  */
+  --ink:         #2b2b2b;   /* lettering, outlines        */
+  --line:        #5a6068;   /* connectors between blocks  */
+
+  /* Block colours. Five is the whole set: past that the sheet stops
+     reading as a record and starts reading as a chart legend. */
+  --c1:#c8203f;  /* crimson     */
+  --c2:#f0b62b;  /* goldenrod   */
+  --c3:#1f7a58;  /* viridian    */
+  --c4:#3f52a0;  /* ultramarine */
+  --c5:#3c2415;  /* brown       */
+
+  --type: "Courier Prime", "Courier New", ui-monospace, monospace;
+}
+
+*{box-sizing:border-box;}
+html,body{height:100%;}
+body{
+  margin:0; overflow:hidden;
+  background:var(--desk);
+  font-family:var(--type); color:var(--ink);
+}
+
+/* ============================================================
+   THE DECK
+   Sheets are slides, not cards laid out on a desk. One sheet fills
+   the screen, you swipe to the next, and the paper runs to every
+   edge: on a tablet there is nothing on screen but the paper and
+   the note.
+
+   Snapping is CSS, not a gesture handler. A touch drag, a trackpad
+   swipe and a scripted scroll then all land the same way, and none
+   of them needs JavaScript to feel right.
+   ============================================================ */
+.deck{
+  display:flex; width:100%;
+  /* dvh, not vh: a tablet's address bar shrinks the visible viewport, and a
+     sheet sized to the layout viewport hangs off the bottom of it. */
+  height:100vh; height:100dvh;
+  overflow-x:auto; overflow-y:hidden;
+  scroll-snap-type:x mandatory; scroll-behavior:smooth;
+  overscroll-behavior-x:contain;
+  scrollbar-width:none;
+}
+.deck::-webkit-scrollbar{display:none;}
+
+/* The desk the notebook lies on. The margin is the whole point of it: a
+   sheet bled to the screen edge is a background image, and a sheet with
+   a hand's width of surface around it and a shadow under it is a page
+   you are looking at. Keep it small — this is a page held open, not a
+   card floating in a gallery.
+
+   container-type:size so the sheet can be measured against the padded
+   box in cq units. Sizing it in vw/vh instead would ignore the margin
+   and push the sheet's corners under it. */
+.slide{
+  flex:0 0 100%; height:100%;
+  scroll-snap-align:center; scroll-snap-stop:always;
+  display:grid; place-items:center;
+  padding:4vmin;
+  container-type:size;
+  background:var(--desk);
+}
+
+/* The way back to the notebook. Fixed to the screen rather than placed
+   on a sheet, because it belongs to the deck and not to any one note —
+   it sits out on the desk, in the margin, off the paper. Quiet enough
+   to be scenery until you look for it. Delete it on a standalone
+   sheet. */
+.home{
+  position:fixed; top:1.5vmin; left:2.2vmin; z-index:5;
+  font-size:clamp(9px,1.1vmin,12px); letter-spacing:.22em;
+  text-transform:uppercase; text-decoration:none;
+  color:color-mix(in srgb, var(--ink) 32%, transparent);
+}
+.home:hover,.home:focus-visible{color:var(--ink);}
+
+/* ============================================================
+   TURN IT SIDEWAYS
+   A sheet is the largest 4:3 page that fits, so on a phone held
+   upright it is 359px wide and every measurement on it — all of
+   them fractions of that width — lands at four or five pixels.
+   There is no layout that fixes it: the page is landscape, and the
+   answer is to turn the phone. Say so, rather than serving type
+   nobody can read and letting it look broken.
+   ============================================================ */
+.turn{
+  display:none;
+  position:fixed; inset:auto 0 2.5vmin; z-index:6; margin:0;
+  text-align:center; font-size:11px; letter-spacing:.22em;
+  text-transform:uppercase; color:color-mix(in srgb, var(--ink) 45%, transparent);
+}
+@media (max-width:560px) and (orientation:portrait){.turn{display:block;}}
+
+/* ============================================================
+   THE SHEET
+   4:3, two regions, no dividing rule. Paper shows wherever
+   nothing is printed on it.
+   ============================================================ */
+.sheet{
+  position:relative; aspect-ratio:4/3;
+  /* The largest 4:3 page that fits inside the slide's margin. cq units,
+     not vw/vh: they resolve against the slide's padded box, so the
+     margin is respected instead of being covered. */
+  width:min(100cqw, 133.334cqh);
+  display:grid; overflow:hidden; color:var(--ink);
+  /* Size container so the cqh caps on the plates resolve against the
+     sheet's own height instead of the viewport. Nested inside .slide's
+     container: cq units used ON the sheet measure the slide, cq units
+     used on anything INSIDE it measure the sheet. */
+  container-type:size;
+  background-color:var(--paper);
+  /* handling marks, then fibers, then grain */
+  background-image:
+    radial-gradient(70% 55% at 18% 8%,  rgba(255,255,255,.55), transparent 60%),
+    radial-gradient(50% 40% at 88% 92%, rgba(138,106,74,.10), transparent 65%),
+    radial-gradient(40% 30% at 96% 30%, rgba(138,106,74,.07), transparent 70%),
+    repeating-linear-gradient(0deg, rgba(120,100,75,.035) 0 1px, transparent 1px 3px),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.72' numOctaves='4' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='220' height='220' filter='url(%23n)' opacity='.35'/></svg>");
+  background-blend-mode:normal,normal,normal,normal,multiply;
+  /* A lit top edge, a tight contact shadow where the page meets the
+     desk, and one soft cast shadow. Three cheap cues, and the page
+     stops being a rectangle of colour. */
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.55) inset,
+    0 2px 3px rgba(60,50,35,.10),
+    0 16px 36px -20px rgba(60,50,35,.55);
+  /* Pin the single row: an implicit auto row grows to fit a tall plate and
+     pushes the bottom-aligned columns out through overflow:hidden. */
+  grid-template-rows:minmax(0,1fr);
+  /* Every measurement on a sheet is a fraction of the sheet's own width, so
+     one reads the same on a 1024px tablet and a 2560px display instead of
+     dwindling to a speck of 12px type in a huge paper field. 1 --px is one
+     pixel at the 1040px reference width; the design numbers below are
+     unchanged, they are just no longer absolute. */
+  --px: calc(100cqw / 1040);
+}
+.sheet[data-variant="A"]{grid-template-columns:58% 42%;}
+.sheet[data-variant="B"]{grid-template-columns:58% 42%;}
+.sheet[data-variant="C"]{grid-template-columns:66% 34%;}
+
+/* Left region, variant A: the photograph. Preserved, never restyled. */
+.photo{width:100%;height:100%;object-fit:cover;display:block;filter:saturate(.94) contrast(1.02);}
+.photo-missing{
+  width:100%;height:100%;display:grid;place-items:center;
+  background:var(--paper-shade);color:color-mix(in srgb, var(--ink) 35%, transparent);
+  font-size:calc(11*var(--px));letter-spacing:.18em;text-transform:uppercase;
+}
+
+/* ============================================================
+   THE PLATE
+   Sizing is done in JS (fitPlates), not here. Mermaid ships an svg
+   with a viewBox but no height attribute, so CSS percentages resolve
+   circularly: width:100%+height:auto collapses to a ~17px intrinsic
+   height with the width back-derived from the viewBox ratio, and
+   width:100%+height:100% inside an auto grid row scales the drawing
+   past its region. fitPlates measures the padded box instead.
+
+   No blend mode: the fills are opaque and are meant to cover the
+   paper. Multiply would tint every block with the stock underneath
+   and pull the saturation back out of it.
+   ============================================================ */
+.plate{display:grid;place-items:center;padding:6%;min-width:0;overflow:hidden;}
+.plate svg{filter:url(#gouache);}
+/* Bars are blocks too, and every block on this sheet is outlined. */
+.plate svg [class^="bar-plot"] rect{stroke:var(--ink);stroke-width:1.2;}
+
+/* Variant C's plate is the subject: it gets the region, and it grows upward off
+   the bottom margin so a short plate reads as low on the sheet, not floating. */
+.plate--large{align-items:end;padding:7% 9% 9% 8%;}
+/* A figure plate is a grid, not a drawing that grows off the bottom margin:
+   centre it in the field so the sheet does not read as half empty. */
+/* place-items:center STRETCH, not center. .plate sets place-items:center, and
+   justify-items:center makes the grid item shrink-to-fit, so the figure grid's
+   width:100% resolves against its own content and every frame collapses to a
+   thumbnail. Same trap as the plate svg sizing, one level up. */
+.plate--large:has(.figs){place-items:center stretch;padding:9% 9%;}
+/* Variant B's plate is small: about a third of its region's height. */
+.plate--small{flex:none;height:32cqh;padding:0 12% 0 6%;}
+
+/* Optional: rule the plate as graph paper and carry one heavy plotted line.
+   Same palette, same paper; only the field changes. Set data-plate="grid".
+   margin, not padding: the ruled field has to sit inset with bare paper
+   around it, and padding alone would paint the grid to the region edge. */
+.plate[data-plate="grid"]{
+  margin:7% 8% 8% 7%;
+  padding:2.5% 3%;
+  border:1px solid color-mix(in srgb, var(--ink) 50%, transparent);
+  background-image:
+    repeating-linear-gradient(0deg,  color-mix(in srgb, var(--c1) 30%, transparent) 0 .9px, transparent .9px 70px),
+    repeating-linear-gradient(90deg, color-mix(in srgb, var(--c1) 30%, transparent) 0 .9px, transparent .9px 70px),
+    repeating-linear-gradient(0deg,  color-mix(in srgb, var(--c1) 17%, transparent) 0 .7px, transparent .7px 14px),
+    repeating-linear-gradient(90deg, color-mix(in srgb, var(--c1) 17%, transparent) 0 .7px, transparent .7px 14px);
+}
+
+/* Variant A's mark is a pictorial stamp from the image prompt, so it arrives as
+   a raster, and a stamp's thin ink does let the paper through. */
+.mark{
+  max-width:74%;max-height:34cqh;height:auto;
+  mix-blend-mode:multiply;
+  filter:url(#gouache);
+}
+.mark-missing{
+  width:74%;aspect-ratio:4/3;display:grid;place-items:center;
+  border:1px dashed color-mix(in srgb, var(--ink) 22%, transparent);
+  color:color-mix(in srgb, var(--ink) 30%, transparent);
+  font-size:calc(10*var(--px));letter-spacing:.2em;text-transform:uppercase;
+}
+
+/* ============================================================
+   FIGURES
+   Icons, for a small pictorial diagram or to clarify a term in the
+   text. Font Awesome supplies the shapes; everything period about
+   them is treatment, because the shapes themselves are not:
+   Font Awesome is geometric, uniform-weight and rounded, which
+   reads as interface chrome next to typewriter type on rag paper.
+
+   Three things pull a glyph back into the 1800s, in order of how
+   much they do:
+
+   1. HATCHING. A solid silhouette is the single strongest modern
+      tell. background-clip:text fills the glyph with ruled
+      diagonals instead, which is how an engraving carries tone.
+      Free's outline (fa-regular) set is too small to rely on —
+      most pictorial icons ship solid only — so hatching, not
+      outlining, is what does this job.
+   2. PRESENTATION. A hairline frame, a Fig. number and a small-caps
+      label turn an icon into a specimen on a plate.
+   3. A wobbled edge, so the line is drawn rather than plotted.
+   ============================================================ */
+.ic, .fig{--mark:var(--ink);}
+[data-ink="c1"].ic,[data-ink="c1"].fig{--mark:var(--c1);}
+[data-ink="c2"].ic,[data-ink="c2"].fig{--mark:var(--c2);}
+[data-ink="c3"].ic,[data-ink="c3"].fig{--mark:var(--c3);}
+[data-ink="c4"].ic,[data-ink="c4"].fig{--mark:var(--c4);}
+[data-ink="c5"].ic,[data-ink="c5"].fig{--mark:var(--c5);}
+
+/* Inline, to clarify a term mid-sentence. Sized to the type it sits in and
+   nudged onto the baseline; solid ink is fine this small, where a glyph reads
+   as a mark rather than as a picture. */
+.ic{
+  color:var(--mark);
+  font-size:1.02em;
+  vertical-align:-.08em;
+  margin:0 .18em;
+  filter:url(#engraved);
+}
+
+/* The hatch. Ruled diagonals clipped to the glyph, the way tone is laid in an
+   engraving. Applied to ::before because that is where an icon font puts the
+   glyph, so the element itself has nothing to clip. */
+.ic.hatch::before, .fig .glyph.hatch::before{
+  background-image:repeating-linear-gradient(
+    var(--hatch,48deg),
+    var(--mark) 0 1.1px,
+    transparent 1.1px 2.1px);
+  -webkit-background-clip:text;
+  background-clip:text;
+  color:transparent;
+  /* The contour. Hatching alone has no edge: the ruling eats the silhouette
+     and the figure goes soft. A hairline stroke round the glyph is what an
+     engraver cuts first and fills afterwards. */
+  -webkit-text-stroke:.55px var(--mark);
+}
+/* Goldenrod is the one hue light enough to float off cream paper even at full
+   ruling density. Give it a carbon keyline instead of a same-colour one — which
+   is what a chromolithograph does with a pale ink, and the only per-hue
+   exception in the file. */
+[data-ink="c2"].fig .glyph.hatch::before,
+[data-ink="c2"].ic.hatch::before{-webkit-text-stroke-color:var(--ink);}
+
+/* Vary the ruling direction down the plate. At one angle throughout, six
+   figures read as one texture; an engraver lays hatching along the form. */
+.figs .fig:nth-child(3n+1){--hatch:42deg;}
+.figs .fig:nth-child(3n+2){--hatch:-38deg;}
+.figs .fig:nth-child(3n+3){--hatch:66deg;}
+
+/* A plate of figures. */
+.figs{
+  display:grid;
+  grid-template-columns:repeat(var(--cols,3), 1fr);
+  gap:9% 7%;
+  width:100%;
+}
+/* margin:0 is load-bearing: <figure> carries a UA default of `margin: 1em 40px`,
+   and 40px a side eats half of a grid column, collapsing every frame to a
+   thumbnail no matter what the grid does. */
+.fig{display:flex;flex-direction:column;gap:.7em;min-width:0;margin:0;}
+/* NOT align-items:center. That makes the children shrink-to-fit, so the frame's
+   width:100% resolves against its own content and the specimen box collapses to
+   a thumbnail. Stretch instead and centre the caption's text. */
+/* Hairline frame: the specimen box, not a UI card. No radius, no shadow. */
+.fig .frame{
+  width:100%;aspect-ratio:1/1;
+  display:grid;place-items:center;
+  border:1px solid color-mix(in srgb, var(--ink) 62%, transparent);
+}
+.fig .glyph{
+  font-size:clamp(20px, 8.4cqw, 88px);
+  line-height:1;
+  color:var(--mark);
+  filter:url(#engraved);
+}
+.fig figcaption{
+  margin:0;text-align:center;
+  font-size:calc(9*var(--px));line-height:1.5;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink);
+}
+.fig figcaption .n{display:block;color:color-mix(in srgb, var(--ink) 55%, transparent);}
+
+/* ============================================================
+   TYPE
+   Small, restrained, mechanically imperfect. The .jitter script
+   handles per-character baseline and ink-weight variance.
+   ============================================================ */
+.col{padding:8% 9%;display:flex;flex-direction:column;min-width:0;}
+.col--entry{padding:9% 6% 9% 9%;}          /* B, left: the written entry */
+.col--bottom{justify-content:flex-end;}    /* right-hand columns sit low */
+
+.heading{font-size:calc(13*var(--px));letter-spacing:.16em;margin:0 0 1.4em;}
+.body{font-size:calc(12.5*var(--px));line-height:2.05;margin:0;white-space:pre-wrap;text-wrap:pretty;}
+.caption{font-size:calc(12*var(--px));line-height:1.95;margin:0;white-space:pre-line;}
+.caption .name{letter-spacing:.16em;}
+
+/* A and B put the caption directly beneath the plate, the pair sitting on the
+   bottom margin: the plate reads as low in the region, open paper above it. */
+.stack{display:flex;flex-direction:column;height:100%;padding:0 12% 12%;justify-content:flex-end;}
+.stack .plate{padding:0 0 7%;}
+
+.rule{border:0;border-top:1px solid color-mix(in srgb, var(--ink) 28%, transparent);width:2.2em;margin:1.6em 0;}
+
+/* Per-character jitter. Each word is one nowrap box so a line can only break
+   between words: inline-block glyphs are otherwise all break opportunities,
+   which splits words mid-stem. */
+.jitter .w{white-space:nowrap;}
+.jitter .w > span{display:inline-block;}
+
+/* ============================================================
+   ANNOTATION
+   Marks added to a sheet after it was typed: <mark class="hl">,
+   <span class="ul">, <span class="ring">. Set data-ink="c1".."c5"
+   to change the colour; goldenrod is the default marker.
+
+   These ARE translucent, unlike the plate fills, and for the same
+   reason the fills are not: a highlighter is a translucent medium
+   laid over finished print, so it darkens the type it crosses
+   instead of covering it. Hence multiply, and hence sitting above
+   the glyphs rather than behind them.
+
+   Every mark is randomised per instance by handMarks() and assigned
+   one of three noise filters. Without that, a page of identical
+   ragged edges reads as a repeated graphic, not as a hand.
+   ============================================================ */
+/* The marked-up run itself carries no paint: it only tells drawMarks() what to
+   mark and in which colour. An annotation that wraps across lines has to be
+   drawn once PER LINE, and an absolutely positioned pseudo-element cannot
+   follow a fragmented inline — it collapses onto the first fragment. So the
+   marks are separate elements in an overlay, placed from getClientRects(). */
+.hl, .ul, .ring{--mark:var(--c2);}
+.hl[data-ink="c1"],.ul[data-ink="c1"],.ring[data-ink="c1"]{--mark:var(--c1);}
+.hl[data-ink="c2"],.ul[data-ink="c2"],.ring[data-ink="c2"]{--mark:var(--c2);}
+.hl[data-ink="c3"],.ul[data-ink="c3"],.ring[data-ink="c3"]{--mark:var(--c3);}
+.hl[data-ink="c4"],.ul[data-ink="c4"],.ring[data-ink="c4"]{--mark:var(--c4);}
+.hl[data-ink="c5"],.ul[data-ink="c5"],.ring[data-ink="c5"]{--mark:var(--c5);}
+.hl{background:none;color:inherit;}
+
+.marks{position:absolute;inset:0;pointer-events:none;z-index:3;}
+.mk{position:absolute;mix-blend-mode:multiply;filter:var(--f,url(#handmark1));}
+.mk.m2{--f:url(#handmark2);}
+.mk.m3{--f:url(#handmark3);}
+
+/* Marker sweep, with uneven pressure across the stroke. */
+.mk--hl{
+  background:linear-gradient(var(--a,91deg),
+    color-mix(in srgb, var(--mark) 46%, transparent),
+    color-mix(in srgb, var(--mark) 72%, transparent) 38%,
+    color-mix(in srgb, var(--mark) 54%, transparent) 78%,
+    color-mix(in srgb, var(--mark) 40%, transparent));
+  border-radius:3px 6px 4px 7px / 7px 4px 6px 5px;
+}
+/* Drawn underline, not text-decoration: it has to wobble off the baseline. */
+.mk--ul{background:var(--mark);border-radius:2px;}
+/* Circled, the way you ring a term you mean to come back to. */
+.mk--ring{border:1.6px solid var(--mark);border-radius:50%;}
+
+/* Printing takes the deck apart again: one sheet per page, in order. */
+@media print{
+  /* Landscape, and no page margin, because the page IS the sheet. A4 is
+     1.414:1 and a sheet is 4:3, so the sheet is fitted to the page's height
+     and the difference stays as white at the sides — cropping a sheet to the
+     paper would cut the whitespace the layout is made of. */
+  @page{size:A4 landscape;margin:0;}
+  html,body{height:auto;overflow:visible;background:#fff;}
+  .deck{display:block;height:auto;overflow:visible;scroll-snap-type:none;}
+  /* No desk and no margin on paper: the page IS the sheet.
+
+     container-type:normal is what makes this paginate. A size container is
+     size-contained, so its height stops being derived from its contents and
+     `height:auto` resolves to ZERO — every sheet then overflows a zero-height
+     slide, they all stack at the same origin, and the whole deck prints as one
+     page with one sheet visible on it. On paper nothing needs to measure the
+     slide, so the containment goes. */
+  .slide{display:block;height:auto;padding:0;background:none;
+         container-type:normal;page-break-after:always;break-after:page;}
+  .slide:last-child{page-break-after:auto;break-after:auto;}
+  /* Millimetres, not vh or %: in paged layout a viewport unit has no viewport
+     to resolve against, every slide collapses to nothing, and the deck prints
+     as one page with three sheets stacked on top of each other. A4 landscape
+     is 297×210, so 270×202.5 is the largest 4:3 sheet that fits with a hair of
+     tolerance for a printer that rounds.
+
+     The sheet keeps container-type:size, so --px still resolves against the
+     sheet — at 270mm that is 1020px, and the type prints at its design size. */
+  .slide .sheet{width:270mm;height:202.5mm;margin:0 auto;box-shadow:none;}
+  .home{display:none;}
+  .turn{display:none !important;}
+}
+</style>
+</head>
+<body>
+
+<!-- SVG filter. Not rendered; referenced by CSS. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <!-- Gouache. Flat digital fills are the giveaway, so this lays directional
+       brush streaking inside the shape and wobbles its edge. The anisotropic
+       baseFrequency (low x, high y) is what makes the noise read as horizontal
+       strokes rather than as generic grain. -->
+  <filter id="gouache" x="-6%" y="-6%" width="112%" height="112%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.008 0.42" numOctaves="4"
+                  seed="17" result="streak"/>
+    <feColorMatrix in="streak" type="saturate" values="0" result="grey"/>
+    <!-- hand-brushed edge, not a vector edge -->
+    <feDisplacementMap in="SourceGraphic" in2="grey" scale="1.8"
+                       xChannelSelector="R" yChannelSelector="G" result="wob"/>
+    <!-- pigment sits unevenly: multiply the streaks, clipped to the shape -->
+    <feComponentTransfer in="grey" result="mod">
+      <feFuncA type="table" tableValues="0 0.30"/>
+    </feComponentTransfer>
+    <feComposite in="mod" in2="wob" operator="in" result="inside"/>
+    <feBlend in="wob" in2="inside" mode="multiply"/>
+  </filter>
+
+  <!-- Hand marks. Three seeds of the same filter: feTurbulence's seed cannot be
+       set from CSS, so varying the edge per mark means varying the filter.
+       Anisotropic again (low x, higher y) so the long edges of a sweep ripple
+       while its ends stay roughly vertical, the way a nib behaves. -->
+  <!-- Engraved line: wobble only, and gently. An icon's strokes are thin, so
+       the displacement that suits a painted block would break them up. -->
+  <filter id="engraved" x="-8%" y="-8%" width="116%" height="116%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.09 0.14" numOctaves="2"
+                  seed="11" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="1.1"
+                       xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+
+  <filter id="handmark1" x="-12%" y="-30%" width="124%" height="160%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.022 0.31" numOctaves="3" seed="5" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3.4"
+                       xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+  <filter id="handmark2" x="-12%" y="-30%" width="124%" height="160%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.028 0.26" numOctaves="3" seed="19" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3.0"
+                       xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+  <filter id="handmark3" x="-12%" y="-30%" width="124%" height="160%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.018 0.36" numOctaves="3" seed="31" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3.8"
+                       xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+</defs></svg>
+
+
+<!-- The way back to the notebook this deck belongs to. Delete it when the
+     deck is a standalone sheet with nothing to return to. -->
+<a class="home" href="index.html">&larr;&nbsp; Elsewhere</a>
+
+<!-- Shown only on a phone held upright, where a 4:3 page has nowhere to go.
+     Out on the desk, like the way back: it belongs to the deck, not a sheet. -->
+<p class="turn">Turn sideways to read</p>
+
+<!-- ============================================================
+     THE DECK
+     One <section class="slide"> per sheet, in reading order. Give each
+     an id: it is the deck's own anchor (field-notes.html#rome), which
+     is what a notebook index links to and what the address bar keeps
+     current as you swipe.
+     ============================================================ -->
+<main class="deck">
+
+<section class="slide" id="wittgenstein">
+<div class="sheet" data-variant="B">
+
+  <div class="col col--entry">
+    <p class="heading jitter">LUDWIG WITTGENSTEIN  ·  2026</p>
+    <p class="body jitter">Considered by some to be <mark class="hl">the greatest philosopher of the 20th century</mark>, Wittgenstein played a central, if controversial, role in mid-20th-century analytic philosophy. He continues to influence debate in topics as diverse as logic and language, perception and intention, ethics and religion.
+
+Two stages are commonly recognised. The early Wittgenstein is epitomised in <span class="ul" data-ink="c1">Tractatus Logico-Philosophicus</span>; the later, in <span class="ring" data-ink="c4">Philosophical Investigations</span>, took the more revolutionary step of critiquing all of traditional philosophy including his own early work. The new philosophy is heralded as <mark class="hl" data-ink="c3">anti-systematic through and through</mark>, yet still conducive to genuine understanding of the traditional problems.
+
+In more recent scholarship <span class="ul" data-ink="c1">this division has been questioned</span>: some interpreters claim a unity between all stages, others a more nuanced division with a middle and a post-later Wittgenstein.</p>
+  </div>
+
+  <div class="stack">
+    <div class="plate plate--small">
+      <pre class="mermaid">
+        %%{init:{"flowchart":{"curve":"linear","nodeSpacing":26,"rankSpacing":32}}}%%
+        flowchart TB
+          E["early"]:::c4 --> T{"turn"}:::c1
+          T -->|"picture"| P["Tractatus"]:::c2
+          T -->|"use"| U["Investigations"]:::c3
+          P --> L["language"]:::c5
+          U --> L
+      </pre>
+    </div>
+    <p class="caption jitter">No. 03
+logic / language / method</p>
+  </div>
+
+</div>
+</section>
+
+<section class="slide" id="amsterdam-centraal">
+<div class="sheet" data-variant="A">
+
+  <img class="photo" src="photos/amsterdam-centraal.jpg" alt="" onerror="this.outerHTML='&lt;div class=&quot;photo-missing&quot;&gt;photograph&lt;/div&gt;'">
+
+  <div class="stack">
+    <div class="plate">
+      <img class="mark" src="stamps/amsterdam-centraal.png" alt="" onerror="this.replaceWith(Object.assign(document.createElement('div'),
+                        {className:'mark-missing',textContent:'stamp'}))">
+    </div>
+    <p class="caption jitter"><span class="name">AMSTERDAM CENTRAAL</span>
+No. 02
+brick / rail / water
+1889</p>
+  </div>
+
+</div>
+</section>
+
+</main>
+
+
+<script type="module">
+import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+
+/* Read the one palette off the document, so the CSS above stays the single
+   place colours are defined. */
+const css = getComputedStyle(document.documentElement);
+const v = (name, fallback) => css.getPropertyValue(name).trim() || fallback;
+
+const INK   = { ink: v("--ink", "#2b2b2b"), line: v("--line", "#5a6068") };
+const SPOTS = ["--c1", "--c2", "--c3", "--c4", "--c5"].map(n => v(n, "")).filter(Boolean);
+
+/* Lettering that holds on a filled block: carbon on the goldenrod, cream on
+   the rest. Colours stay plain 6-digit hex — Mermaid's classDef grammar
+   rejects rgba()'s parenthesis, and plotColorPalette is a comma-separated
+   list, so an rgba() value would split into three entries. */
+const labelOn = hex => {
+  const c = hex.replace("#", "").match(/../g).map(h => parseInt(h, 16));
+  const lin = x => (x /= 255) <= 0.04045 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4;
+  const L = 0.2126 * lin(c[0]) + 0.7152 * lin(c[1]) + 0.0722 * lin(c[2]);
+  return L > 0.42 ? INK.ink : "#f4efe6";
+};
+
+const dedent = text => {
+  const lines = text.replace(/^\n+|\s+$/g, "").split("\n");
+  const pad = Math.min(...lines.filter(l => l.trim()).map(l => l.match(/^ */)[0].length));
+  return lines.map(l => l.slice(pad)).join("\n");
+};
+
+/* The CSS --px, in JS: how big one reference pixel is on the sheet this
+   element sits in. The stylesheet sizes type as a fraction of the sheet's
+   width, and anything measured here has to agree with it. */
+const unit = el => (el.closest(".sheet")?.clientWidth || 1040) / 1040;
+
+/* The padded box a plate has to fill. */
+const boxOf = plate => {
+  const cs = getComputedStyle(plate);
+  return {
+    w: Math.max(140, Math.round(plate.clientWidth  - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight))),
+    h: Math.max(140, Math.round(plate.clientHeight - parseFloat(cs.paddingTop)  - parseFloat(cs.paddingBottom)))
+  };
+};
+
+/* Rendered one plate at a time rather than via mermaid.run(), because each
+   chart has to be drawn at its own field's proportions. */
+const plates = [...document.querySelectorAll(".plate pre.mermaid")];
+for (const [i, pre] of plates.entries()) {
+  const plate = pre.closest(".plate");
+  const box = boxOf(plate);
+
+  mermaid.initialize({
+    startOnLoad: false,
+    /* look:"classic", NOT "handDrawn". rough.js renders a fill as HACHURE, so
+       a filled block would come out as diagonal hatching in the fill colour
+       instead of a block. The hand-made quality comes from #gouache instead. */
+    look: "classic",
+    theme: "base",
+    flowchart: { htmlLabels: false, padding: 6 },
+    /* Draw charts AT the field's proportions. xychart's natural aspect is
+       landscape, so letterboxing one into a portrait region strands it in a
+       band with empty field above and below. */
+    xyChart: { width: box.w, height: box.h },
+    themeVariables: {
+      /* Unfilled shapes leave the paper bare. */
+      background:          "transparent",
+      primaryColor:        "transparent",
+      mainBkg:             "transparent",
+      secondaryColor:      "transparent",
+      tertiaryColor:       "transparent",
+      edgeLabelBackground: "transparent",
+      primaryTextColor:    INK.ink,
+      primaryBorderColor:  INK.ink,
+      nodeBorder:          INK.ink,
+      lineColor:           INK.line,
+      tertiaryTextColor:   INK.line,
+      fontFamily:          "'Courier Prime', monospace",
+      fontSize:            "13px",
+      xyChart: {
+        backgroundColor:  "transparent",
+        titleColor:       INK.ink,
+        xAxisLabelColor:  INK.ink,
+        xAxisTitleColor:  INK.ink,
+        xAxisLineColor:   INK.ink,
+        yAxisLabelColor:  INK.ink,
+        yAxisTitleColor:  INK.ink,
+        yAxisLineColor:   INK.ink,
+        /* Bars take the spot colours in order; a line takes the first. */
+        plotColorPalette: SPOTS.join(",")
+      }
+    }
+  });
+
+  let source = dedent(pre.textContent);
+
+  /* Expose the spot colours as classes c1..c5 so a diagram says A["x"]:::c2
+     and gets a filled block with a carbon outline. Injected from the palette
+     rather than written into the markup, so changing a hue restyles every
+     diagram without touching one of them. classDef is flowchart-only syntax:
+     injecting it into an xychart is a parse error. */
+  const kind = source.replace(/%%\{[\s\S]*?\}%%/g, "").trim().split(/\s|\n/)[0];
+  if (/^(flowchart|graph|classDiagram|stateDiagram)/.test(kind)) {
+    source += "\n" + SPOTS.map((c, n) =>
+      `classDef c${n + 1} fill:${c},stroke:${INK.ink},stroke-width:1.5px,color:${labelOn(c)}`
+    ).join("\n");
+  }
+
+  const { svg } = await mermaid.render(`fn-plate-${i}`, source);
+  const holder = document.createElement("div");
+  holder.innerHTML = svg;
+  const el = holder.firstElementChild;
+
+  /* xychart paints an opaque background rect, which would cover the paper and,
+     on a ruled plate, the grid. themeVariables alone does not clear it. */
+  el.querySelector("rect.background")?.setAttribute("fill", "transparent");
+
+  if (el.querySelector('[class^="line-plot"], [class^="bar-plot"]')) {
+    /* xychart lays its outermost axis labels flush with the viewBox edge, so
+       the last one is cut in half ("1900" prints as "190"). Grow the viewBox
+       rather than the chart: shrinking the chart moves the clip inward. */
+    const vb = el.viewBox.baseVal;
+    el.setAttribute("viewBox",
+      `${vb.x - 10} ${vb.y - 6} ${vb.width + 22} ${vb.height + 12}`);
+
+    /* A plotted line is drawn by hand with a broad nib. xychart hardcodes
+       stroke-width 2 with no config for it. Scoped to the plot group: the axes
+       use the same colour and would thicken too. */
+    for (const p of el.querySelectorAll('[class^="line-plot"] path')) {
+      p.setAttribute("stroke", INK.ink);
+      p.setAttribute("stroke-width", "5");
+      p.setAttribute("stroke-linecap", "round");
+      p.setAttribute("stroke-linejoin", "round");
+    }
+  }
+
+  /* Letterbox the drawing against the bottom of its box, so a plate grows
+     upward off the bottom margin instead of floating mid-sheet. */
+  el.setAttribute("preserveAspectRatio", "xMidYMax meet");
+  pre.replaceWith(el);
+}
+
+/* Fit each plate to its box. Done here rather than in CSS for the reason
+   documented at .plate in the stylesheet. */
+function fitPlates() {
+  for (const svg of document.querySelectorAll(".plate svg")) {
+    const plate = svg.closest(".plate");
+    const cs = getComputedStyle(plate);
+    const boxW = plate.clientWidth  - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+    const boxH = plate.clientHeight - parseFloat(cs.paddingTop)  - parseFloat(cs.paddingBottom);
+    const vb = svg.viewBox.baseVal;
+    if (!vb || !vb.width || !vb.height || boxW <= 0 || boxH <= 0) continue;
+    /* Cap the upscale: the plate's lettering scales with it, and a plate with
+       paper around it is the intended look, not one stretched to the margins.
+       The cap is a fraction of the sheet, not an absolute, for the reason
+       --px exists: at a fixed 2.2 a plate that fills a 1040px sheet would sit
+       marooned in the middle of a 2560px one. */
+    const scale = Math.min(boxW / vb.width, boxH / vb.height, 2.2 * unit(plate));
+    svg.removeAttribute("width");
+    svg.removeAttribute("height");
+    svg.style.maxWidth = "none";
+    svg.style.width  = (vb.width  * scale) + "px";
+    svg.style.height = (vb.height * scale) + "px";
+  }
+}
+fitPlates();
+addEventListener("resize", fitPlates);
+
+/* Typewriter imperfection: nudge each glyph off the baseline and vary its ink
+   weight. Newlines and spaces pass through so pre-wrap still breaks correctly. */
+const esc = c => c.replace(/[&<>]/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[m]));
+const jitter = text => text.split(/(\s+)/).map(tok => {
+  if (!tok) return "";
+  if (/^\s+$/.test(tok)) return tok;
+  const glyphs = [...tok].map(c => {
+    const dy = (Math.random() * 0.9 - 0.45).toFixed(2);
+    const op = (0.80 + Math.random() * 0.20).toFixed(2);
+    return `<span style="transform:translateY(${dy}px);opacity:${op}">${esc(c)}</span>`;
+  }).join("");
+  return `<span class="w">${glyphs}</span>`;
+}).join("");
+
+/* Walk text nodes at any depth, so a run inside <mark> or a nested span gets
+   struck like the rest. Each text node is replaced in place with its glyph
+   spans: replacing a node with itself would move it to the end of its parent. */
+for (const el of document.querySelectorAll(".jitter")) {
+  const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+  const texts = [];
+  while (walker.nextNode()) texts.push(walker.currentNode);
+  for (const node of texts) {
+    if (!node.textContent.trim()) continue;
+    const tpl = document.createElement("template");
+    tpl.innerHTML = jitter(node.textContent);
+    node.replaceWith(tpl.content);
+  }
+}
+
+/* Fit a written entry to its column.
+   The sheet is a fixed 4:3, so a long entry runs off the bottom and the sheet's
+   overflow:hidden silently eats the last lines mid-sentence. Give up leading
+   first (2.05 is a luxury that only short notes can afford), then size. Runs
+   after the jitter pass so it measures the final DOM. */
+const ENTRY = { size: 12.5, minSize: 8.5, step: 0.25, leading: [2.05, 1.95, 1.85, 1.75, 1.65] };
+
+function fitEntries() {
+  for (const col of document.querySelectorAll(".col--entry")) {
+    const body = col.querySelector(".body");
+    if (!body) continue;
+
+    /* Every size here is in reference pixels, scaled to this sheet — the same
+       conversion the stylesheet does with --px. Fitting in absolute pixels
+       would give a full-screen sheet a wall of tiny type it never needed to
+       shrink to. */
+    const px = unit(col);
+    const start = ENTRY.size * px;
+    const floor = ENTRY.minSize * px;
+
+    /* Always back to the default first, so a fit is computed from scratch
+       rather than compounding a previous pass. */
+    body.style.fontSize = start + "px";
+    body.style.lineHeight = ENTRY.leading[0];
+
+    /* A collapsed or not-yet-laid-out column reports a near-zero height, and
+       fitting against that drives the type straight to the floor and leaves it
+       there. Bail to the default instead and let the next pass fit it. */
+    if (col.clientHeight < Math.max(60, 120 * px)) continue;
+
+    const fits = () => col.scrollHeight <= col.clientHeight;
+    if (fits()) continue;
+
+    for (const lh of ENTRY.leading) {
+      body.style.lineHeight = lh;
+      if (fits()) break;
+    }
+    let size = start;
+    while (!fits() && size > floor) {
+      size = +(size - ENTRY.step * px).toFixed(3);
+      body.style.fontSize = size + "px";
+    }
+
+    /* Past the floor, shrinking further stops looking like a typed record.
+       Say so rather than clipping: the entry genuinely needs cutting, or the
+       plate needs to give up some of the sheet. */
+    if (!fits()) {
+      console.warn(
+        `Entry overflows its column at the ${ENTRY.minSize}px reference floor by ` +
+        `${col.scrollHeight - col.clientHeight}px. Cut the text or move it to ` +
+        `variant C's wider column.`, col);
+    }
+  }
+}
+/* ============================================================
+   ANNOTATION
+   Draw each marked run into its sheet's overlay, once per line
+   fragment. Every mark gets its own rotation, overshoot and noise
+   filter: a page of identical ragged edges reads as a repeated
+   graphic rather than as a hand.
+   ============================================================ */
+const rand = (lo, hi) => lo + Math.random() * (hi - lo);
+const HAND = new WeakMap();
+
+/* Rolled once per element and remembered, so a resize redraws the same marks
+   in the same hand instead of reshuffling them. */
+const handOf = el => {
+  if (HAND.has(el)) return HAND.get(el);
+  const kind = el.classList.contains("hl") ? "hl"
+             : el.classList.contains("ul") ? "ul" : "ring";
+  const h = {
+    kind,
+    filter: ["m1", "m2", "m3"][Math.floor(Math.random() * 3)],
+    rot:    rand(-1.9, 0.7),
+    angle:  rand(88, 94),
+    /* Asymmetric on purpose: a hand does not start and stop on the word edge. */
+    x1:     kind === "ring" ? rand(7, 12) : rand(1, 6),
+    x2:     kind === "ring" ? rand(8, 14) : rand(3, 9),
+    top:    kind === "ring" ? rand(-7, -3) : rand(-2.5, 0.5),
+    grow:   kind === "ring" ? rand(6, 11) : rand(1, 3)
+  };
+  HAND.set(el, h);
+  return h;
+};
+
+function drawMarks() {
+  for (const sheet of document.querySelectorAll(".sheet")) {
+    const runs = sheet.querySelectorAll(".hl, .ul, .ring");
+    if (!runs.length) continue;
+
+    let layer = sheet.querySelector(":scope > .marks");
+    if (!layer) {
+      layer = document.createElement("div");
+      layer.className = "marks";
+      sheet.append(layer);
+    }
+    layer.replaceChildren();
+    const base = sheet.getBoundingClientRect();
+
+    for (const el of runs) {
+      const h = handOf(el);
+      const colour = getComputedStyle(el).getPropertyValue("--mark").trim();
+
+      /* getClientRects() returns a rect per inline-block, and the jitter pass
+         wraps every word in one — so a run comes back as one rect PER WORD,
+         which draws a sweep with a gap at every space. Merge them by line
+         first: same line if the tops are within most of a line's height. */
+      const rects = [];
+      for (const r of el.getClientRects()) {
+        const line = rects.find(l => Math.abs(l.top - r.top) < r.height * 0.6);
+        if (line) {
+          line.top    = Math.min(line.top, r.top);
+          line.left   = Math.min(line.left, r.left);
+          line.right  = Math.max(line.right, r.right);
+          line.bottom = Math.max(line.bottom, r.bottom);
+        } else {
+          rects.push({ top: r.top, left: r.left, right: r.right, bottom: r.bottom });
+        }
+      }
+      for (const r of rects) {
+        r.width  = r.right - r.left;
+        r.height = r.bottom - r.top;
+      }
+
+      rects.forEach((r, i) => {
+        /* Overshoot only the run's true ends, never a mid-run line break. */
+        const x1 = i === 0 ? h.x1 : 0;
+        const x2 = i === rects.length - 1 ? h.x2 : 0;
+        const mk = document.createElement("div");
+        mk.className = `mk mk--${h.kind} ${h.filter}`;
+        mk.style.setProperty("--mark", colour);
+        mk.style.setProperty("--a", h.angle.toFixed(1) + "deg");
+        mk.style.left  = (r.left - base.left - x1) + "px";
+        mk.style.width = (r.width + x1 + x2) + "px";
+        mk.style.transform = `rotate(${h.rot.toFixed(2)}deg)`;
+
+        if (h.kind === "ul") {
+          mk.style.top = (r.bottom - base.top - 2 + h.grow) + "px";
+          mk.style.height = "2px";
+        } else {
+          mk.style.top = (r.top - base.top + h.top) + "px";
+          mk.style.height = (r.height + h.grow) + "px";
+        }
+        layer.append(mk);
+      });
+    }
+  }
+}
+
+/* ============================================================
+   THE DECK
+   Swiping is the browser's job — scroll-snap already does it, on
+   touch and trackpad alike. What is left is the keyboard, and
+   keeping the deck and the address bar agreed on which sheet is
+   showing, so a note can be linked to and an index can send you
+   straight to it.
+   ============================================================ */
+const deck = document.querySelector(".deck");
+if (deck) {
+  const slides = [...deck.querySelectorAll(".slide")];
+  const showing = () => Math.round(deck.scrollLeft / deck.clientWidth);
+  const go = n => deck.scrollTo({
+    left: Math.max(0, Math.min(slides.length - 1, n)) * deck.clientWidth,
+    behavior: "smooth"
+  });
+
+  /* Arriving on #rome must not animate across every sheet in between, so the
+     jump is made with smooth scrolling switched off and switched back after
+     the frame lands. */
+  const jump = () => {
+    const i = slides.findIndex(s => s.id === decodeURIComponent(location.hash.slice(1)));
+    if (i < 0) return;
+    deck.style.scrollBehavior = "auto";
+    deck.scrollLeft = i * deck.clientWidth;
+    requestAnimationFrame(() => { deck.style.scrollBehavior = ""; });
+  };
+  jump();
+  addEventListener("hashchange", jump);
+
+  addEventListener("keydown", e => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const step = { ArrowRight: 1, PageDown: 1, " ": 1, ArrowLeft: -1, PageUp: -1 }[e.key];
+    if (step) go(showing() + step);
+    else if (e.key === "Home") go(0);
+    else if (e.key === "End") go(slides.length - 1);
+    else return;
+    e.preventDefault();
+  });
+
+  /* replaceState, not pushState: swiping through a deck should not fill the
+     back button with every sheet you passed on the way. */
+  let settle;
+  deck.addEventListener("scroll", () => {
+    clearTimeout(settle);
+    settle = setTimeout(() => {
+      const id = slides[showing()]?.id;
+      if (id && decodeURIComponent(location.hash.slice(1)) !== id)
+        history.replaceState(null, "", "#" + id);
+    }, 140);
+  }, { passive: true });
+}
+
+/* Metrics have to be final before anything is measured: Courier Prime arrives
+   over the network, and laying marks out against fallback metrics puts every
+   sweep in the wrong place. */
+await document.fonts.ready;
+fitEntries();
+drawMarks();
+addEventListener("resize", () => { fitEntries(); drawMarks(); });
+</script>
+
+<!-- Opened by double-click rather than served, this page silently loses every
+     diagram: the module above never runs, because importing a module from
+     file:// is the thing browsers refuse. Say so on the desk, since a sheet
+     with its plate missing looks like a sheet that was built wrong.
+
+     A classic script, deliberately: a module here would fail for the same
+     reason and take the warning with it. -->
+<script>
+if (location.protocol === "file:") {
+  document.body.insertAdjacentHTML("afterbegin",
+    '<p style="position:fixed;top:0;left:0;right:0;z-index:9;margin:0;' +
+    'padding:.6em 1em;text-align:center;font:400 12px/1.5 \'Courier Prime\',' +
+    'monospace;letter-spacing:.12em;color:#2b2b2b;background:#f0b62b">' +
+    'SERVE THIS OVER HTTP &mdash; from the filesystem the diagrams cannot ' +
+    'load. &nbsp;python3 -m http.server</p>');
+}
+</script>
+</body>
+</html>
