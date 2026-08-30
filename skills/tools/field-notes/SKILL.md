@@ -73,6 +73,22 @@ deck hand-built: a build overwrites the deck it generates.
 checks. `assets/examples/notebook/` is a shelf, two notebooks and five sheets
 with every link live — open it before building the first one.
 
+## From a source URL
+
+For a browser bookmark that starts a new Field Notes request from the page in
+front of you, read `references/bookmarklet.md`. It lets the user choose between
+ChatGPT web, Claude Desktop, and Codex Desktop. Use ChatGPT web as the portable
+default; Claude Desktop has a documented new-chat deep link, while the Codex
+Desktop option is version-dependent and must be described as such.
+
+When a user arrives with a URL, open and read the source before choosing a
+variant or writing the note. Treat the page title and URL as a lead, not as
+facts: retain a visible source link, distinguish the source's claims from your
+observations, and ask for pasted text when an article cannot be accessed. Use
+the dedicated Wikipedia route for Wikipedia pages; for other articles, infer
+the sheet, notebook, or shelf from the user's request rather than treating one
+URL as an instruction to make one fixed kind of deliverable.
+
 ## Route first: prompt, web, or cited-source web
 
 | When the mark is | Make it | Because |
@@ -188,6 +204,11 @@ page that fits the screen, with a hand's width of surface showing round it and a
 shadow under it, because a sheet bled to the window edge is a background image
 rather than a page you are turning. Give every slide an id; that anchor is what
 an index links to.
+
+On desktop, the deck keeps a transparent sliver of the preceding and following
+sheet visible. Those pages are click targets, so the deck reads as one
+continuous run of paper; keyboard and swipe navigation retain the same anchors.
+Do not copy this narrow-page treatment to phone or tablet layouts.
 
 `assets/notebook.html` builds both indexes and ships with both, so **delete the
 one you are not delivering.** The three pages are one move outward and back: a

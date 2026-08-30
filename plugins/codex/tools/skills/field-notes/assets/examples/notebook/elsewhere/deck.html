@@ -69,6 +69,18 @@ body{
 }
 .deck::-webkit-scrollbar{display:none;}
 
+/* On a wide desk, the next and previous sheets remain in sight. The current
+   page is fully legible; its neighbours fade into the desk and can be clicked
+   to turn toward them. Phones and tablets keep the one-page-at-a-time view,
+   where a narrow page would make the type too small. */
+@media (min-width:900px){
+  .deck{--page-peek:clamp(38px,7vw,132px);padding-inline:var(--page-peek);scroll-padding-inline:var(--page-peek);}
+  .deck > :is(.slide){flex-basis:calc(100% - (2 * var(--page-peek)));}
+  .sheet{transition:opacity .18s;}
+  .slide:not(.is-current) .sheet{opacity:.42;}
+  .slide:not(.is-current){cursor:pointer;}
+}
+
 /* The desk the notebook lies on. The margin is the whole point of it: a
    sheet bled to the screen edge is a background image, and a sheet with
    a hand's width of surface around it and a shadow under it is a page
@@ -920,11 +932,32 @@ function drawMarks() {
 const deck = document.querySelector(".deck");
 if (deck) {
   const slides = [...deck.querySelectorAll(".slide")];
-  const showing = () => Math.round(deck.scrollLeft / deck.clientWidth);
-  const go = n => deck.scrollTo({
-    left: Math.max(0, Math.min(slides.length - 1, n)) * deck.clientWidth,
-    behavior: "smooth"
-  });
+  /* Desktop pages are deliberately narrower than the viewport so their
+     neighbours can show at either edge. Use their measured centres rather
+     than viewport-width multiples, which remain correct for both layouts. */
+  const positionFor = slide => slide.offsetLeft - (deck.clientWidth - slide.clientWidth) / 2;
+  const showing = () => {
+    const centre = deck.scrollLeft + deck.clientWidth / 2;
+    return slides.reduce((nearest, slide, i) =>
+      Math.abs(slide.offsetLeft + slide.clientWidth / 2 - centre) <
+      Math.abs(slides[nearest].offsetLeft + slides[nearest].clientWidth / 2 - centre)
+        ? i : nearest, 0);
+  };
+  const setCurrent = (i = showing()) => {
+    slides.forEach((slide, n) => slide.classList.toggle("is-current", n === i));
+    return i;
+  };
+  const go = n => {
+    n = Math.max(0, Math.min(slides.length - 1, n));
+    /* Smooth scrolling can defer its scroll event, so make the target page
+       opaque at the start of a click or key turn rather than leaving the
+       centred sheet faded until the animation's eventual settle. */
+    setCurrent(n);
+    const id = slides[n]?.id;
+    if (id && decodeURIComponent(location.hash.slice(1)) !== id)
+      history.replaceState(null, "", "#" + id);
+    deck.scrollTo({ left: positionFor(slides[n]), behavior: "smooth" });
+  };
 
   /* Arriving on #rome must not animate across every sheet in between, so the
      jump is made with smooth scrolling switched off and switched back after
@@ -933,7 +966,8 @@ if (deck) {
     const i = slides.findIndex(s => s.id === decodeURIComponent(location.hash.slice(1)));
     if (i < 0) return;
     deck.style.scrollBehavior = "auto";
-    deck.scrollLeft = i * deck.clientWidth;
+    deck.scrollLeft = positionFor(slides[i]);
+    setCurrent(i);
     requestAnimationFrame(() => { deck.style.scrollBehavior = ""; });
   };
   jump();
@@ -949,13 +983,21 @@ if (deck) {
     e.preventDefault();
   });
 
+  deck.addEventListener("click", e => {
+    const slide = e.target.closest(".slide");
+    if (slide && slide !== slides[showing()]) {
+      e.preventDefault();
+      go(slides.indexOf(slide));
+    }
+  });
+
   /* replaceState, not pushState: swiping through a deck should not fill the
      back button with every sheet you passed on the way. */
   let settle;
   deck.addEventListener("scroll", () => {
     clearTimeout(settle);
     settle = setTimeout(() => {
-      const id = slides[showing()]?.id;
+      const id = slides[setCurrent()]?.id;
       if (id && decodeURIComponent(location.hash.slice(1)) !== id)
         history.replaceState(null, "", "#" + id);
     }, 140);

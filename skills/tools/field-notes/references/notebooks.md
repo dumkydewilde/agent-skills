@@ -136,6 +136,13 @@ same way. The script adds only the keyboard (arrows, space, page keys, home,
 end), the jump to `#id` on arrival, and the `replaceState` that keeps the hash
 on the sheet you are looking at.
 
+On desktops at least 900px wide, the current sheet is centred with a transparent
+sliver of its previous and next neighbours left visible. Click either neighbour
+to turn to it. The deck must calculate its snap positions from each slide's
+actual centre — not `viewport width × page number` — because the slides are
+narrower at this breakpoint. Keep one full opaque page on tablet and phone;
+the preview is a wide-desk affordance, not a way to shrink the note.
+
 Delete `.home` when the deck is standalone — a link back to an index that does
 not exist is worse than no link.
 
@@ -195,6 +202,11 @@ rotation each way, two stocks and three handling-mark positions across the
 grid. Keep the tilt under a degree. Past that it is a scatter, and a scatter is
 a mood board. On hover the paper straightens and its shadow deepens — the one
 gesture allowed, because it is what picking a page up looks like.
+
+The note index moves from four columns on a full desktop to three at 1100px and
+two at 820px. Do not jump directly from four to two: it wastes the compact
+desktop width and makes the desk feel like a phone app. One column remains the
+phone-only fallback at 520px.
 
 The card mark is the sheet's own stamp where the sheet has one. Where the sheet
 carries a Mermaid diagram instead, there is no raster to show: use a hatched

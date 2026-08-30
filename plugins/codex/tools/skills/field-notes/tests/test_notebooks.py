@@ -56,6 +56,17 @@ class DeckTest(unittest.TestCase):
         self.assertIn("history.replaceState", self.deck)
         self.assertNotIn("history.pushState", self.deck)
 
+    def test_desktop_shows_clickable_neighbouring_sheets(self) -> None:
+        """A wide deck should feel like a continuous stack of paper, not a modal."""
+        self.assertIn("@media (min-width:900px)", self.deck)
+        self.assertIn("--page-peek", self.deck)
+        self.assertIn("flex-basis:calc(100% - (2 * var(--page-peek)))", self.deck)
+        self.assertIn(".slide:not(.is-current) .sheet{opacity:.42;}", self.deck)
+        self.assertIn(".slide:not(.is-current){cursor:pointer;}", self.deck)
+        self.assertIn('deck.addEventListener("click"', self.deck)
+        self.assertIn("if (slide && slide !== slides[showing()])", self.deck)
+        self.assertIn("setCurrent(n);", self.deck)
+
     def test_printing_takes_the_deck_apart_again(self) -> None:
         printed = self.deck.split("@media print{", 1)[1]
         self.assertIn("page-break-after:always", printed)
@@ -92,11 +103,14 @@ class NotebookIndexTest(unittest.TestCase):
         self.assertIn("grid-template-columns:repeat(var(--cols,4),minmax(0,1fr))",
                       self.index)
 
-    def test_four_across_is_held_down_to_phone_width(self) -> None:
-        """Twelve marks on a tablet is the job; two columns at 1024 is an app."""
-        self.assertIn("@media (max-width:820px){.cards{grid-template-columns:repeat(2",
+    def test_the_notebook_index_steps_from_four_to_three_to_two_columns(self) -> None:
+        """Desktop narrows gradually; only phones collapse to one loose sheet."""
+        self.assertIn("@media (max-width:1100px){.cards:not(.cards--shelf){grid-template-columns:repeat(3",
                       self.index)
-        self.assertNotIn("max-width:1180px", self.index)
+        self.assertIn("@media (max-width:820px){.cards:not(.cards--shelf){grid-template-columns:repeat(2",
+                      self.index)
+        self.assertIn("@media (max-width:520px){.cards:not(.cards--shelf){grid-template-columns:minmax(0,1fr);}}",
+                      self.index)
 
     def test_the_index_is_objects_on_the_desk_and_not_a_page(self) -> None:
         """A page carrying twelve notes is a document; the notes lie loose."""
@@ -249,6 +263,17 @@ class NotebookRoutingTest(unittest.TestCase):
         self.assertIn("assets/notebook.html", self.skill)
         for trigger in ("notebook", "deck", "index"):
             self.assertIn(trigger, self.skill)
+
+    def test_the_skill_supports_a_choice_of_source_url_bookmarklets(self) -> None:
+        self.assertIn("references/bookmarklet.md", self.skill)
+        bookmarklet = (SKILL_ROOT / "references" / "bookmarklet.md").read_text()
+        for target in ("https://chatgpt.com/?q=", "claude://claude.ai/new?q=",
+                       "codex://threads/new?prompt=", "originUrl="):
+            self.assertIn(target, bookmarklet)
+        self.assertIn("location.href", bookmarklet)
+        self.assertIn("field-notes", bookmarklet)
+        self.assertIn("Claude Desktop", self.skill)
+        self.assertIn("Codex Desktop", self.skill)
 
     def test_the_skill_sizes_the_delivery_before_the_content(self) -> None:
         """One note, one notebook and a shelf name different files."""
