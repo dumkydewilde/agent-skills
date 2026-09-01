@@ -4,7 +4,7 @@ dstack is a fork of **pstack** by Lauren Tan, MIT licensed.
 
 - Upstream: <https://github.com/cursor/plugins/tree/main/pstack>
 - Forked from: `cursor/plugins` commit `b9ddc83c32972210b8a94d389130713e8eed346e` (2026-08-31), pstack version 0.14.5
-- License: MIT, see `LICENSE`
+- License: MIT, see `LICENSE` alongside this file
 
 This is a fork, not a mirror. There is no upstream sync pipeline, on purpose. The port rewrites the model routing, the PR flow, and the playbook set, so merging upstream would conflict on files that were deliberately changed. Pull upstream ideas by hand when they look worth it.
 

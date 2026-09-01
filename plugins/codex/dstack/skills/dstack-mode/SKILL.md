@@ -5,7 +5,7 @@ description: "Dumky's rigorous engineering mode for non-trivial work. Matches th
 
 # Dstack mode
 
-Ported from [pstack](https://github.com/cursor/plugins/tree/main/pstack) by Lauren Tan. See `UPSTREAM.md` at the repo root for what changed and why.
+Ported from [pstack](https://github.com/cursor/plugins/tree/main/pstack) by Lauren Tan. See `docs/dstack/UPSTREAM.md` in the tools repo for what changed and why.
 
 ## When this applies
 
