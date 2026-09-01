@@ -1,0 +1,21 @@
+{
+  "name": "dstack",
+  "version": "0.1.0",
+  "description": "Rigorous engineering workflows: playbook routing, twenty-one principles, multi-reviewer design and review, and unslopped prose. Ported from cursor/plugins pstack.",
+  "author": {
+    "name": "Dumky de Wilde"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "dstack",
+    "shortDescription": "Rigorous agent workflows",
+    "longDescription": "Match a task to a playbook, apply twenty-one engineering principles, explore design in parallel, review adversarially, verify against the real artifact, and write prose with the AI tells removed. Ported from Lauren Tan's pstack for Cursor.",
+    "developerName": "Dumky de Wilde",
+    "category": "Developer Tools",
+    "defaultPrompt": "Use dstack-mode to work on this task with rigor.",
+    "capabilities": [
+      "Read",
+      "Write"
+    ]
+  }
+}

@@ -6,7 +6,7 @@
   },
   "metadata": {
     "description": "Dumky's personal Claude Code / Codex skill plugins.",
-    "version": "0.2.1"
+    "version": "0.3.0"
   },
   "plugins": [
     {
@@ -15,6 +15,13 @@
       "description": "Personal general-purpose tools: conversation-history search, web-scraper, and field-notes.",
       "version": "0.2.1",
       "category": "productivity"
+    },
+    {
+      "name": "dstack",
+      "source": "./plugins/claude/dstack",
+      "description": "Rigorous engineering workflows: playbook routing, twenty-one principles, multi-reviewer design and review, and unslopped prose. Ported from cursor/plugins pstack.",
+      "version": "0.1.0",
+      "category": "developer-tools"
     }
   ]
 }
