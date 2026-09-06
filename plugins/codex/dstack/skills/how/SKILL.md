@@ -108,7 +108,7 @@ Run the full explain flow above (Steps 1-4). You must understand the architectur
 
 ### Step 2. Spawn Critics
 
-After the explanation is complete, spawn one architectural critic per model in your configured how-critics list (defaults `fable`, `opus`, `sonnet`), all in a single message.
+After the explanation is complete, spawn one architectural critic per model in your configured how-critics list (defaults `fable`, `opus`, `sonnet`), all in a single message. Add one codex critic per [`../dstack-mode/references/codex-panelist.md`](../dstack-mode/references/codex-panelist.md); it is a Bash call, so launch it in the same message as the Agent calls.
 
 For each critic:
 - `subagent_type`: `general-purpose`

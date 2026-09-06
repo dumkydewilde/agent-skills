@@ -58,7 +58,7 @@ The full index lives in the **principles** skill. Read it at task start and read
 
 Pass `isolation: "worktree"` when parallel subagents write files, so they cannot clobber each other. Skip it for read-only work.
 
-**Single-vendor caveat.** Every panel here is Claude models, so agreement between reviewers is weaker evidence than upstream's cross-vendor agreement. Buy diversity through distinct prompts and lenses, and weight consensus accordingly. Codex is installed on this machine and runs headless, so the real fix is a `codex exec` panelist. `interrogate` and `arena` both carry the note on where that plugs in.
+**Every panel runs a codex panelist.** Claude reviewers share failure modes, so agreement between them is weaker evidence than it looks. `interrogate`, `arena`, `architect`, and `how` critics each add one `codex exec` reviewer for a genuine second vendor. The invocation, its four gotchas, and how to weight its findings are in [`references/codex-panelist.md`](references/codex-panelist.md). Still buy diversity through distinct prompts and lenses on the Claude side. When you skip the codex reviewer, say so in the verdict.
 
 You own every subagent's work. Review the diff and write your own summary, do not pass through what it said. Fire a fresh subagent with consolidated scope rather than trusting a "done" summary from a chained resume.
 

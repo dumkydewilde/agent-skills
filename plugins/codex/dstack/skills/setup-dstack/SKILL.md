@@ -65,14 +65,48 @@ arena cross-judge pool: fable, opus
 swarm workers: sonnet
 architect runners: fable, opus, sonnet
 interrogate reviewers: fable, opus, sonnet
+
+## Cross-vendor panelist (codex)
+
+Each panel role listed here adds one non-Agent reviewer run through Bash.
+This is not a `model` value and never goes on an Agent call.
+
+codex panelist: interrogate reviewers, arena cross-judge pool, architect runners, how critics
 ```
 
-### 5. Confirm and note the single-vendor limit
+Keep the codex section unless the user opts out. It is the only part of this
+file that buys real reviewer diversity; the rest picks between models that
+share a vendor.
+
+### 5. Check that codex actually runs
+
+Do not write the codex line on faith. Run one throwaway call and read the
+output:
+
+```bash
+codex exec --model gpt-5.6-terra --sandbox read-only \
+  -o /tmp/codex-check.md "Reply with exactly: CODEX_OK" \
+  < /dev/null > /dev/null 2>&1
+cat /tmp/codex-check.md
+```
+
+`CODEX_OK` means the panelist works. A model-slug error means the CLI is older
+than 0.153; either upgrade it or write `gpt-5.5` into the file instead. Anything
+else (no `codex` on PATH, an auth failure) means drop the codex section and tell
+the user the panels are single-vendor until they fix it.
+
+See [`../dstack-mode/references/codex-panelist.md`](../dstack-mode/references/codex-panelist.md)
+for what each flag is doing.
+
+### 6. Confirm
 
 Tell the user the file was written and that skills pick it up on their next run.
 
-Say plainly that every panel is Claude models, so cross-model agreement is weaker evidence here than it was upstream, where panels spanned four vendors. Point at the `codex exec` note in **interrogate** and **arena** as the path to a genuinely independent reviewer.
+Say plainly which panels now carry a codex reviewer, and that agreement between
+two Claude panelists is weaker evidence than agreement between a Claude
+panelist and codex. If step 5 failed and you dropped the codex section, say that
+instead, and say what would fix it.
 
-### 6. Offer a verification skill (optional)
+### 7. Offer a verification skill (optional)
 
 Check whether the project has a way to drive the real app for proof (a `verify-*` skill, or an existing harness). If not, offer once: "want a project-local verification skill, so agents can drive the app the way a user does and prove changes work? I can generate one with **create-verification-skill**." On yes, invoke it. On no, move on without pushing.

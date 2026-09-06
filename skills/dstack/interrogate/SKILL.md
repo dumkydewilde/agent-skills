@@ -39,15 +39,16 @@ Launch all reviewers in a single message using the Agent tool. Use the `interrog
 | Reviewer A | `fable` | correctness and intent |
 | Reviewer B | `opus` | security, data loss, and failure modes |
 | Reviewer C | `sonnet` | maintainability and reader load |
+| Reviewer D | `codex` (not an Agent call) | independent second vendor, same filled prompt |
 
 For each reviewer:
 - `subagent_type`: `general-purpose`
 - `model`: the configured `interrogate reviewers` entry, or the table default with no configured line
 - Read-only: the prompt forbids writes. Claude Code has no `readonly` flag, so state it in the prompt.
 
-**Single-vendor caveat.** Upstream got its adversarial signal from four vendors disagreeing. Inside Claude Code every reviewer is a Claude model, so raw model diversity is weaker and correlated blind spots are the real risk. Two things compensate. Give each reviewer a distinct lens from the table so they fail differently, and weight agreement lower than upstream does: two Claude models agreeing is not the same evidence as two vendors agreeing.
+**Reviewer D is a second vendor, and it is the default.** Reviewers A through C are Claude models with correlated blind spots, so give each a distinct lens from the table and treat their agreement as weaker than a raw count suggests. Reviewer D is a `codex exec` call through Bash, not an Agent call, launched alongside the others and folded into Step 4 under a `Reviewer D (codex)` label. Read [`../dstack-mode/references/codex-panelist.md`](../dstack-mode/references/codex-panelist.md) for the invocation and its gotchas.
 
-**Planned: fan out to a second vendor.** The genuine fix is a reviewer that is not a Claude model at all. Codex is installed on this machine and can run headless, so a fourth reviewer becomes `codex exec --model gpt-5.6-terra "<the filled reviewer prompt>"` captured through Bash, with its findings folded in at Step 4 under a `Reviewer D (codex)` label. Do this when the review matters enough to justify the extra round trip. Until it is wired up as a default, note in the verdict that the panel was single-vendor.
+Drop Reviewer D when the diff is small enough that the extra round trip costs more than the diversity buys, and note in the verdict that the panel was single-vendor.
 
 If a model name is rejected when you spawn the subagent, use the valid names in the tool's error message and pick the closest tier. Do not block the review on it. If the configured value is `inherit`, omit `model` so the role runs on the parent chat model.
 
@@ -66,7 +67,7 @@ Each reviewer produces structured findings as described in the prompt template.
 As results come back, build a unified picture:
 
 1. **Parse all findings** from the reviewers
-2. **Identify consensus**. Findings raised by 2+ models independently are highest signal.
+2. **Identify consensus**. Findings raised by 2+ models independently are highest signal. A finding raised by codex and any Claude reviewer outranks one raised by two Claude reviewers, because the Claude pair may share the blind spot rather than confirm the finding.
 3. **Identify lone-model findings**. Still worth reading, but weight accordingly.
 4. **Deduplicate**. Different models may describe the same issue differently. Merge these and note which models raised it.
 5. **Note disagreements**. If one model flags something and another explicitly says the opposite, that's useful context for the verdict.

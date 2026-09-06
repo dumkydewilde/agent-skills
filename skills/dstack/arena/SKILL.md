@@ -37,9 +37,11 @@ If a candidate fails to produce output, proceed with N-1 and note the dropout in
 
 ## Phase C: Cross-judge
 
-After all Phase B candidates complete, choose one model from the `arena cross-judge pool` in `~/.claude/dstack-models.md` when present. Otherwise use `fable` or `opus`. Prefer a different model from the parent's, and a different one from whichever runner you expect to win. Spawn one judge subagent on that model, with a prompt that forbids writes.
+After all Phase B candidates complete, run the judge as a `codex exec` call. A Claude judge scoring Claude candidates shares their priors, which is the weakest link in this phase, and the judge is the one role where an outside vendor changes the outcome rather than the wording. Give it the rubric and the candidate paths; it scores each criterion and recommends a base with rationale. Read [`../dstack-mode/references/codex-panelist.md`](../dstack-mode/references/codex-panelist.md) for the invocation.
 
-**Planned: a genuinely independent judge.** A Claude judge scoring Claude candidates shares their priors, which is the weakest link in this phase. Codex runs headless on this machine, so the honest version of the cross-judge is `codex exec --model gpt-5.6-terra` given the rubric and the candidate paths. Reach for it when the pick is close or expensive to reverse. It sees the rubric and the candidates by path label, scores each criterion, and recommends a base with rationale. It runs in parallel with the parent's reading in Phase D, not with the candidates themselves. Spawning while candidates are still writing means the judge sees partial or empty outputs and reports them as dropouts.
+Start the judge only after candidates finish writing. Launched early it reads half-written files and reports them as dropouts. It runs in parallel with the parent's own reading in Phase D.
+
+When you skip codex, fall back to one model from the `arena cross-judge pool` in `~/.claude/dstack-models.md`, or `fable` or `opus` with no configured line. Prefer a different model from the parent's, and from whichever runner you expect to win. Spawn it as a subagent with a prompt that forbids writes, and record in the synthesis that the judge shared the candidates' vendor.
 
 ## Phase D: Pick a base
 
