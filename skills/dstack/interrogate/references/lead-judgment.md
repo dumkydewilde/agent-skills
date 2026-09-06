@@ -31,6 +31,10 @@ Reviewers often suggest extracting functions, adding interfaces, or creating abs
 
 This is the most common false positive in code review. A finding that amounts to "I prefer a different approach" is not a bug, not a design flaw, and not actionable unless the reviewer shows a concrete problem with the current approach. Dismiss these, and say why.
 
+### Scope Change
+
+A finding whose fix changes what the user asked for is a different kind of finding. Watch for a swapped dataset, a different deliverable, or a cost or runtime that moves by an order of magnitude, such as a demo that ran in a minute becoming a backfill that runs for hours. Unanimity does not promote it. Three reviewers agreeing that the goal should be bigger is still a request to change the goal. File it under Challenge the intent, act on the rest, and keep building what was asked for. The user decides whether to widen, and can do so on a finished artifact instead of an argument. The user's stated ask outranks the panel's taste, including yours; they may have rejected the alternative already for reasons the review package does not carry. A test that catches most cases is to put the proposed change next to the user's opening message and ask whether they would recognise it as what they asked for.
+
 ### Missing Context Signals
 
 Watch for findings that reveal the reviewer didn't understand the context:

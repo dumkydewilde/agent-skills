@@ -27,6 +27,7 @@ The 21 `principle-*` skills became one `principles` skill with 21 files under `r
 - `docs-change` playbook. No upstream equivalent. The deliverable is prose that has to be correct against a running product, so every sample gets executed.
 - `dstack-mode/scripts/check_plan.py`. A Python port of upstream's `check-plan.mjs`, rewritten against the leaner plan skeleton. Upstream's ran on Bun.
 - `dstack-mode/references/review-triage.md`. Upstream's `bugbot-triage.md`, generalized off Bugbot and Graphite.
+- Intent freeze in `interrogate`, with a **Challenge the intent** section, plus the `ask:` todo and the **Deviations from the ask** reply line in `dstack-mode`. Added after a session let a unanimous plan review swap the dataset and turn a one-minute demo into a seventeen-hour backfill without asking. Upstream trusts cross-vendor agreement as signal; here, agreement on a leading question is treated as a prompt defect. A finding that would change the goal is carried to the human as an open decision while the work continues on the ask as stated, so autonomy is kept by staying on the goal rather than by stopping.
 
 ### Translated
 

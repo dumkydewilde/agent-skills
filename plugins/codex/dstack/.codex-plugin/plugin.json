@@ -1,6 +1,6 @@
 {
   "name": "dstack",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Rigorous engineering workflows: playbook routing, twenty-one principles, multi-reviewer design and review, and unslopped prose. Ported from cursor/plugins pstack.",
   "author": {
     "name": "Dumky de Wilde"

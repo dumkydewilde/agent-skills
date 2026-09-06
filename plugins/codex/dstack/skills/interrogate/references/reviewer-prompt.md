@@ -12,7 +12,7 @@ The author's stated intent for this change:
 
 > {INTENT}
 
-You are reviewing whether the code achieves this intent well. Do NOT question the intent itself. Assume the goal is correct and challenge the execution.
+You are reviewing whether the code achieves this intent well. Do NOT question the intent itself. Assume the goal is correct and challenge the execution. If you believe the goal itself is wrong, write one line under a heading `## Intent concern` at the top of your findings, then review the execution anyway. The lead hands intent concerns to the human. They are not findings you can resolve, and a review that only argues for a different goal is an empty review.
 
 ## Code Under Review
 

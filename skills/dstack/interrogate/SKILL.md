@@ -1,11 +1,11 @@
 ---
 name: interrogate
-description: "Use for \"interrogate\", \"adversarial review\", \"multi-model review\", \"challenge this\", \"stress test this code\", \"find blind spots\", or \"tear this apart\". Multiple LLM reviewers challenge changes from independent angles."
+description: "Use for \"interrogate\", \"adversarial review\", \"multi-model review\", \"challenge this\", \"stress test this code\", \"review this plan\", \"attack this plan\", \"find blind spots\", or \"tear this apart\". Multiple LLM reviewers challenge a change or a plan from independent angles, against an intent that stays frozen."
 ---
 
 # Interrogate
 
-Spawn one reviewer per configured model to adversarially review code changes. Each model gets the same prompt and rubric. The adversarial signal comes from model diversity, not assigned personas. Models differ in blind spots, priors, and reasoning patterns. Agreement across models is high-confidence signal; lone-model findings are worth reading but lower confidence.
+Spawn one reviewer per configured model to adversarially review code changes. A plan document works the same way, and is how `architect` Phase C pressure-tests a design before code exists. The plan's stated goal is the intent; its mechanics are the code under review. Each model gets the same prompt and rubric. The adversarial signal comes from model diversity, not assigned personas. Models differ in blind spots, priors, and reasoning patterns. Agreement across models is high-confidence signal; lone-model findings are worth reading but lower confidence.
 
 The deliverable is a synthesized verdict. Do NOT auto-apply changes.
 
@@ -28,7 +28,9 @@ Before spawning reviewers, state the intent explicitly. What is this code trying
 - PR description if one exists
 - The code itself
 
-Write one clear paragraph. Reviewers challenge whether the work achieves the intent well, not whether the intent itself is correct. If you're unsure about the intent, ask the user before proceeding.
+Write one clear paragraph, quoting the user's own words for the deliverable, the data, and the effort they signed up for. Reviewers challenge whether the work achieves the intent well, not whether the intent itself is correct. If you're unsure about the intent, ask the user before proceeding.
+
+**The intent is frozen input for the rest of the review.** Neither the reviewers nor you may rewrite it. The reviewer prompt gets no extra questions of the form "is the goal right", "is this the right dataset", or "does X earn its place here". Those are the user's questions. Asking a panel to attack the goal produces unanimous agreement that the goal should change, which reads as a strong finding and is nothing of the kind. A concern about the intent is still recorded, under **Challenge the intent** below. It does not stop the review or the work; it stops you from acting on it.
 
 ## Step 3, Spawn Reviewers
 
@@ -71,6 +73,7 @@ As results come back, build a unified picture:
 3. **Identify lone-model findings**. Still worth reading, but weight accordingly.
 4. **Deduplicate**. Different models may describe the same issue differently. Merge these and note which models raised it.
 5. **Note disagreements**. If one model flags something and another explicitly says the opposite, that's useful context for the verdict.
+6. **Steer a panel that drifted.** If a reviewer spent its findings arguing for a different goal and returned little about the execution, that is a prompt defect, not a verdict. Re-run that reviewer once with the intent restated at the top and the execution questions made concrete. Fold the intent argument into Challenge the intent and read the second pass for findings.
 
 ## Step 5, Lead Judgment
 
@@ -84,6 +87,7 @@ Categorize every finding using these buckets:
 - **Consider**. Legitimate points, but you're not sure they outweigh the cost of addressing them right now. Worth the user's attention.
 - **Noted**. Technically valid but not actionable. Context-dependent, premature optimization, or low-impact given the current stage.
 - **Dismissed**. Wrong, nitpicky, or missing context. Brief explanation why.
+- **Challenge the intent**. A finding that can only be resolved by changing the goal, the dataset, the deliverable, or the cost or runtime envelope the user signed up for. It is never an Act On, whoever raised it and however many agreed. Act on everything else and keep building inside the stated intent. The intent question goes to the user as an open decision, and nothing moves on it until they answer. See the Scope Change section of `references/lead-judgment.md`.
 
 For each finding, include:
 - Which model(s) raised it
@@ -96,6 +100,9 @@ Present the verdict in this structure:
 
 ### Intent
 > [The stated intent paragraph from Step 2]
+
+### Challenge the intent
+[Findings that say the goal itself is wrong, with who raised them. Empty is the normal case. When it is not empty, the Act On list still gets done, inside the intent as stated. What waits for the user is the re-plan, the re-scope, or the dataset change the finding asks for. If the alternative is cheap to show, offer it as a sketch next to the deliverable, never instead of it.]
 
 ### Reviewers
 - Reviewer [label]: [model name], [N findings] (one bullet per reviewer)
