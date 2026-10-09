@@ -30,6 +30,7 @@ from pathlib import Path
 from typing import Any, Iterable, Iterator
 
 HOME = Path.home()
+HOME_DIR_PREFIX = str(HOME).replace("/", "-") + "-"
 CLAUDE_PROJECTS = HOME / ".claude" / "projects"
 CLAUDE_DESKTOP_EXPORT = HOME / "conductor" / "claude-desktop-export"
 CODEX_SESSIONS = HOME / ".codex" / "sessions"
@@ -78,8 +79,9 @@ def path_mtime(path: Path) -> datetime:
 
 
 def clean_project_name(project_dir: Path) -> str:
+    # Claude Code encodes a project's absolute path by swapping "/" for "-".
     name = project_dir.name
-    return name.replace("-Users-dumkydewilde-", "").replace("-", "/")
+    return name.removeprefix(HOME_DIR_PREFIX).replace("-", "/")
 
 
 def extract_text(value: Any) -> str:
