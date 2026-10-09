@@ -1,7 +1,7 @@
 {
-  "name": "tools",
+  "name": "agent-skills",
   "interface": {
-    "displayName": "Dumky's Tools"
+    "displayName": "Dumky's Agent Skills"
   },
   "plugins": [
     {
