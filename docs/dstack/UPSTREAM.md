@@ -19,7 +19,7 @@ Fifteen skills and eleven playbooks, because they assume Cursor, Graphite, Bugbo
 
 ### Collapsed
 
-The 21 `principle-*` skills became one `principles` skill with 21 files under `references/`. Upstream shipped them as 21 top-level skills, which costs 21 entries in the session's skill list for one paragraph each. The index and the read-the-leaf-in-full rule are preserved.
+The 21 `principle-*` skills became one `principles` skill with one file each under `references/`. Upstream shipped them as 21 top-level skills, which costs 21 entries in the session's skill list for one paragraph each. The index and the read-the-leaf-in-full rule are preserved.
 
 ### Added
 
@@ -27,6 +27,8 @@ The 21 `principle-*` skills became one `principles` skill with 21 files under `r
 - `docs-change` playbook. No upstream equivalent. The deliverable is prose that has to be correct against a running product, so every sample gets executed.
 - `dstack-mode/scripts/check_plan.py`. A Python port of upstream's `check-plan.mjs`, rewritten against the leaner plan skeleton. Upstream's ran on Bun.
 - `dstack-mode/references/review-triage.md`. Upstream's `bugbot-triage.md`, generalized off Bugbot and Graphite.
+- `keep-history-out-of-the-artifact`, a twenty-second principle. No upstream equivalent. Added after artifacts kept shipping with their own edit history inside them: `v2` names, "now supports" docs, "(was X)" UI copy, comments describing the change instead of the code. `interrogate` and `unslop` check for it.
+- `dehistorize`. The remediation pass for that principle, for an artifact that already shipped with the leaks; the principle stops you writing them, the skill removes them. Most of it is about what not to delete. An unguided baseline run on a seeded fixture found every leak and then also deleted the changelog and the migration guide, both of which exist to carry the delta.
 - Intent freeze in `interrogate`, with a **Challenge the intent** section, plus the `ask:` todo and the **Deviations from the ask** reply line in `dstack-mode`. Added after a session let a unanimous plan review swap the dataset and turn a one-minute demo into a seventeen-hour backfill without asking. Upstream trusts cross-vendor agreement as signal; here, agreement on a leading question is treated as a prompt defect. A finding that would change the goal is carried to the human as an open decision while the work continues on the ask as stated, so autonomy is kept by staying on the goal rather than by stopping.
 
 ### Translated
