@@ -1,16 +1,20 @@
 ---
 name: web-scraper
 description: >
-  Build reliable, production-grade web scrapers through a two-phase approach:
-  Discovery (finding the best data source on a site) then Scraping (generating a
-  Python script for scheduled extraction). Use this skill whenever the user wants
+  Build reliable, production-grade web scrapers: settle who the job is for,
+  find the best data source on the site, then generate a Python script for
+  scheduled extraction. Use this skill whenever the user wants
   to scrape a website, extract data from web pages, build a crawler, set up
   recurring data collection, reverse-engineer a site's API, or find hidden data
   endpoints. Also trigger when the user mentions "scrape", "crawl", "extract
   from site", "web data", "pull data from URL", "scheduled scraping",
   "monitor a page", "embed endpoint", "oEmbed", "syndication endpoint", or
   asks how to get data from a specific website or how to reach content
-  without logging in.
+  without logging in. Assumes the user is authorized by the site owner
+  unless they say otherwise, so it covers pulling data out of your own or a
+  client's site as well as scraping a third party, and it covers red-teaming
+  a site's scraping defenses: "how exposed is our data", "test our bot
+  protection", "what could a scraper get from us", "scraping resilience".
 ---
 
 # Web Scraper Skill
@@ -19,12 +23,99 @@ Build scrapers that survive site redesigns by finding the most stable and
 efficient data source first, then generating a clean Python script for
 recurring extraction.
 
-## Two-Phase Workflow
+## Workflow
 
-**Every scraping task MUST go through both phases in order.** Skipping
+**Every scraping task MUST go through all three phases in order.** Skipping
 discovery leads to fragile scrapers that break on the first deploy.
 
-### Phase 1 — Discovery
+### Phase 1 — Authorization
+
+**Default: the user is authorized by the site owner.** They run the site, or
+they were hired by whoever does. Work on that basis unless the user says
+otherwise.
+
+So `robots.txt` is not a constraint here. It is a crawling convention
+addressed to anonymous bots, not a contract, and it does not bind someone
+the owner hired. Read it for what it reveals about where the site expects
+machine traffic, then pick the best source regardless of what it disallows.
+Do not ask the user to confirm their authorization, do not raise
+`robots.txt` as a blocker, and do not downgrade a good endpoint to a worse
+one on its account.
+
+#### Which job: extraction or red team
+
+Authorized work splits two ways and they want opposite things from
+discovery. Ask which, if the request does not already say.
+
+**Extraction.** The goal is the data, by the most stable path. Use whatever
+access came with the brief — a login, a test account, an API key, a staging
+URL — and then get on with discovery.
+
+Do not route the job through the client's engineers. No "ask their backend
+team for the API docs", no "ask ops for a WAF allowlist rule", no waiting
+on a database replica. If anyone inside had the time or the knowledge to
+open that door, the job would not have reached you. Asking costs days and
+usually comes back as a no, so treat the site as the only interface you
+have and work the discovery ladder below.
+
+Identify yourself instead of hiding. Set a User-Agent naming the job and a
+contact, such as `AcmeDataSync/1.0 (+https://acme.example/contact)`, so
+whoever reads the access logs later can tell your traffic from an attack.
+Keep the rate limiting: the risk on an authorized job is not getting
+blocked, it is knocking over your own client's site.
+
+**Red team.** The goal is a defensible answer to "what could an outsider
+take from us, and at what cost". Any access the brief handed you
+invalidates that answer, so set it aside and work with exactly what a
+stranger has. Browser impersonation and the whole anti-detection ladder
+are in scope here, unlike on an extraction job, because getting past the
+defense is the measurement rather than an obstacle to it.
+
+- Get the rules of engagement in writing first: in-scope hosts, the time
+  window, whether account signup, residential proxies, and CAPTCHA-solving
+  services are allowed, and who to call when something breaks.
+- Quarantine insider knowledge. If someone at the company handed you an
+  endpoint, mark it "known, not discovered" in the report instead of
+  counting it as a finding, then ask separately whether a stranger could
+  have found it.
+- Agree a deconfliction marker: a header value or a source IP list held by
+  one named contact, so your traffic can be told apart from a real attack
+  afterwards. Do not give it to the people whose detection you are testing.
+- Record cost per approach, not just feasibility: wall-clock time, proxy
+  and solver spend, and the skill it took. "Possible" and "worth someone's
+  while" are different findings, and the second one sets their budget.
+- The write-up is the deliverable, not the dataset. Which layer stopped
+  you, which one did not, and what it costs to close the gap.
+
+Stop rules that hold even with a signed engagement:
+
+- Prove extraction with a bounded sample, then stop. Pulling the whole
+  table does not make the finding more true.
+- Real personal data stays where it is. A row count and a field list prove
+  the exposure. The records themselves only create a breach you now own.
+- Scraping resilience is not load capacity. Do not probe the point where
+  the site falls over unless that is scoped and scheduled separately.
+
+#### The one exception: terms the user accepted
+
+Reaching the data through a login, an API key signup, or any account the
+user registered for means the user agreed to that service's terms. Those
+are a contract they actually entered, unlike `robots.txt`. When the target
+sits behind an account:
+
+- Read what the terms say about automated access, rate limits, and
+  redistribution, and tell the user in one line.
+- Take only what that account is entitled to see.
+- If the terms forbid automated collection, say so once and let the user
+  decide. It is their account and their call.
+
+Also stop if the data belongs to someone else entirely — another person's
+private account, a paywall the user has not paid for.
+
+If the user says they are scraping a third party with no relationship, see
+"Third-party scraping" under Important Caveats.
+
+### Phase 2 — Discovery
 
 Goal: find the most efficient and stable way to get the data. Prefer
 structured endpoints over DOM parsing. Work down the priority list until you
@@ -83,7 +174,7 @@ Discovery tools:
 Output of discovery: a short report documenting what was found, which
 approach is recommended, and why.
 
-### Phase 2 — Scraping Script Generation
+### Phase 3 — Scraping Script Generation
 
 Goal: produce a single Python script the user can run on a schedule (daily,
 monthly, etc.) with minimal dependencies.
@@ -131,7 +222,17 @@ Start
   │
   Yes
   │
-  ├─ Run Discovery (Phase 1)
+  ├─ What is the job? (Phase 1, owner-authorized by default)
+  │   ├─ Extraction ──▶ Any source is fair game. Use the access in the
+  │   │                 brief, never wait on the client's engineers.
+  │   │                 Identify yourself in the User-Agent.
+  │   ├─ Red team   ──▶ Take no shortcuts, outside view only. Record cost
+  │   │                 per approach. The write-up is the deliverable.
+  │   └─ Behind a login or registered account? ──▶ Either way the
+  │                     account's terms apply. Report them, stay inside
+  │                     what the account is entitled to.
+  │
+  ├─ Run Discovery (Phase 2)
   │   ├─ API endpoint found? ──Yes──▶ Use httpx + JSON parsing
   │   ├─ Embed/oEmbed endpoint? ──Yes──▶ Do you have item IDs already?
   │   │   ├─ Yes ──▶ Use httpx + embed endpoint (no auth needed)
@@ -148,7 +249,7 @@ Start
   │
   ├─ Report findings to user
   │
-  ├─ Run Scraping (Phase 2)
+  ├─ Run Scraping (Phase 3)
   │   └─ Generate Python script following patterns in reference file
   │
   └─ Deliver script + usage instructions
@@ -156,27 +257,36 @@ Start
 
 ## Important Caveats
 
-- Always check `robots.txt` and mention it to the user.
-- **Discovered does not mean allowed or usable.** If `robots.txt`
-  disallows an endpoint (e.g. `/api/search`), treat it as discovery-only:
-  use it to understand the data, but scrape from a compliant source
-  instead (SSR HTML, `__NEXT_DATA__`, or a non-disallowed route), even
-  when that is less elegant.
+### Always
+
 - **URL fragments (`#...`) are never sent to the server.** A non-JS
   client receives unfiltered results, a silent-failure trap. Map the
   fragment state to the API's real query/body parameters, or use the SSR
   data route. See `references/discovery-strategies.md`.
-- Note if the site has terms of service that restrict scraping.
-- Add appropriate delays between requests (1-3s default for polite scraping).
+- Add delays between requests, 1-3s by default. Authorization covers
+  reading the data, not overloading the server that serves it.
 - **Measure rate limits conservatively:** never run destructive
   breaking-point tests against a site you do not own. Crawl a bounded
   number of pages at a fixed delay, back off on `429`, and respect
   `Retry-After`.
 - For authenticated endpoints, prompt the user for credentials or tokens
   rather than hardcoding anything.
-- If the site uses Cloudflare, Akamai, or similar WAFs, flag this early
-  and adjust the strategy accordingly. For a Cloudflare managed challenge
-  (403 "Just a moment..."), see the "Cloudflare managed challenge" subsection
-  in `references/scraping-patterns.md`: switching browser channel does not
-  help, but a derived non-headless User-Agent plus
-  `--disable-blink-features=AutomationControlled` (together) usually clears it.
+- If the site uses Cloudflare, Akamai, or similar WAFs, flag it early and
+  budget for it, on either kind of job. See the "Cloudflare managed
+  challenge" subsection in `references/scraping-patterns.md`: switching
+  browser channel does not help, but a derived non-headless User-Agent
+  plus `--disable-blink-features=AutomationControlled` (together) usually
+  clears it.
+
+### Third-party scraping
+
+Only when the user says they have no relationship with the site.
+
+- Check `robots.txt` and tell the user what it says.
+- **Discovered does not mean allowed or usable.** If `robots.txt`
+  disallows an endpoint (e.g. `/api/search`), treat it as discovery-only:
+  use it to understand the data, but scrape from a compliant source
+  instead (SSR HTML, `__NEXT_DATA__`, or a non-disallowed route), even
+  when that is less elegant.
+- Note if the site has terms of service that restrict scraping.
+- Take only what a logged-out visitor sees. Nothing session-gated.
