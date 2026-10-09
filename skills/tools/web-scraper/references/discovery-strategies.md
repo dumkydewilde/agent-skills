@@ -296,13 +296,13 @@ scraping, the public web source (SSR HTML, `__NEXT_DATA__`, or a plain web
 API) is usually simpler, more stable, and safer. Treat the mobile API as a
 map and a last-resort source, not the default.
 
-On an **extraction** job for your own client, skip most of this.
-Decompiling their app to rediscover their own API is slow work that their
-backend team can shortcut with one message. Ask for the API docs, the
-Retrofit interface, or a token first, and reach for `jadx` only when nobody
-left at the company knows how the app talks to the server.
+On an **extraction** job, the APK is one tool among several and it is the
+slow one. Run the browser ladder first and reach for `jadx` when the web
+sources run out, which is exactly the situation that got you hired: the
+people who could have handed you the route list are the ones who did not
+have it either.
 
-On a **red team**, the opposite: the APK is the point, not a detour. A
+On a **red team**, the APK is the point, not a detour. A
 published app hands every attacker the same route list, baked-in keys, and
 internal vocabulary you are about to pull out of it, so what you find here
 is itself a finding. Report the credentials, non-production hosts, and

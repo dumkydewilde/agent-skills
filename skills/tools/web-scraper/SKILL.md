@@ -48,30 +48,29 @@ one on its account.
 Authorized work splits two ways and they want opposite things from
 discovery. Ask which, if the request does not already say.
 
-**Extraction.** The goal is the data, by the most stable path. Take every
-shortcut going, and ask for them before reverse-engineering anything:
+**Extraction.** The goal is the data, by the most stable path. Use whatever
+access came with the brief — a login, a test account, an API key, a staging
+URL — and then get on with discovery.
 
-- A database replica, an admin export, or a reporting API. Often ends the
-  job in one conversation.
-- Credentials or an API key for a documented internal endpoint.
-- A WAF allowlist rule for your IP or User-Agent. One rule from their ops
-  team beats every fingerprint trick in
-  `references/scraping-patterns.md`, and it survives the next WAF update.
-- A staging environment, so a load mistake does not land on production.
+Do not route the job through the client's engineers. No "ask their backend
+team for the API docs", no "ask ops for a WAF allowlist rule", no waiting
+on a database replica. If anyone inside had the time or the knowledge to
+open that door, the job would not have reached you. Asking costs days and
+usually comes back as a no, so treat the site as the only interface you
+have and work the discovery ladder below.
 
 Identify yourself instead of hiding. Set a User-Agent naming the job and a
-contact, such as `AcmeDataSync/1.0 (+https://acme.example/contact)`, so the
-owner's ops team can tell your traffic from an attack. Keep the rate
-limiting: the risk on an authorized job is not getting blocked, it is
-knocking over your own client's site.
+contact, such as `AcmeDataSync/1.0 (+https://acme.example/contact)`, so
+whoever reads the access logs later can tell your traffic from an attack.
+Keep the rate limiting: the risk on an authorized job is not getting
+blocked, it is knocking over your own client's site.
 
 **Red team.** The goal is a defensible answer to "what could an outsider
-take from us, and at what cost". Every shortcut above invalidates that
-answer, so take none of them. Work with what a stranger has: no
-credentials, no allowlist, no staging, no backend contact. Browser
-impersonation and the whole anti-detection ladder are in scope here,
-unlike on an extraction job, because getting past the defense is the
-measurement.
+take from us, and at what cost". Any access the brief handed you
+invalidates that answer, so set it aside and work with exactly what a
+stranger has. Browser impersonation and the whole anti-detection ladder
+are in scope here, unlike on an extraction job, because getting past the
+defense is the measurement rather than an obstacle to it.
 
 - Get the rules of engagement in writing first: in-scope hosts, the time
   window, whether account signup, residential proxies, and CAPTCHA-solving
@@ -225,9 +224,9 @@ Start
   Yes
   │
   ├─ What is the job? (Phase 0, owner-authorized by default)
-  │   ├─ Extraction ──▶ Ask for DB/export/API/allowlist first; otherwise
-  │   │                 any source is fair game. Identify yourself in the
-  │   │                 User-Agent.
+  │   ├─ Extraction ──▶ Any source is fair game. Use the access in the
+  │   │                 brief, never wait on the client's engineers.
+  │   │                 Identify yourself in the User-Agent.
   │   ├─ Red team   ──▶ Take no shortcuts, outside view only. Record cost
   │   │                 per approach. The write-up is the deliverable.
   │   └─ Behind a login or registered account? ──▶ Either way the
@@ -273,10 +272,8 @@ Start
   `Retry-After`.
 - For authenticated endpoints, prompt the user for credentials or tokens
   rather than hardcoding anything.
-- If the site uses Cloudflare, Akamai, or similar WAFs, flag it early. On
-  an extraction job the fix is usually an allowlist rule from the owner, so
-  ask before spending time on evasion. On a red team, the WAF is the thing
-  under test, so do not ask. See the "Cloudflare managed
+- If the site uses Cloudflare, Akamai, or similar WAFs, flag it early and
+  budget for it, on either kind of job. See the "Cloudflare managed
   challenge" subsection in `references/scraping-patterns.md`: switching
   browser channel does not help, but a derived non-headless User-Agent
   plus `--disable-blink-features=AutomationControlled` (together) usually
