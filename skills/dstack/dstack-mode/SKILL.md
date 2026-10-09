@@ -34,6 +34,7 @@ Remaining triggers:
 - Nontrivial multi-step → write the throughput checkpoint (Feature step 3).
 - Any prose surface → the **unslop** skill. Your reply is a prose surface; write it per **Writing the reply**.
 - Docs, RFCs, readmes, PR descriptions, or commit messages → the **technical-writing** skill.
+- An artifact that narrates its own edit history ("now supports", v2 names, "(was X)" copy) → the **dehistorize** skill.
 - Writing or editing a SKILL.md → the **authoring-skills** skill.
 - Before commit → the built-in `/simplify` skill over the diff.
 - Before review → the **no-comments** skill.

@@ -39,6 +39,7 @@ Does the code fit well into the system it's part of?
 - Data model fit: do the data structures match the actual access patterns? The right structure makes downstream code obvious; the wrong one fights you at every turn.
 - Bolted-on vs. integrated: was the change patched onto the existing design, or does it read as if the design always accounted for it? If the new requirement had been known from the start, would the code look like this?
 - Legacy dual-paths: does the change introduce a new API while keeping the old one alive? If there are no external consumers, migrate callers and delete the old path in the same wave. Don't leave compatibility layers that will become permanent.
+- History leakage: does the artifact narrate its own edit history? UI copy like "new score: 50 (was 35)", names like `scoreV2` or `newCalculateScore`, comments describing the change rather than the code, docs saying "now supports". The artifact's audience never saw the previous version; the delta belongs in the commit or PR. Flag any line a from-scratch implementer with the same requirements would not write.
 
 Don't penalize simple code for lacking abstraction. Premature abstraction is worse than duplication.
 

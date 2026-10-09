@@ -1,11 +1,11 @@
 ---
 name: principles
-description: "The twenty-one engineering principles dstack works from, one rule each, grouped as core, architecture, verification, delegation, and meta. Use at the start of any multi-step task, when dstack-mode's todolist says to read the principles, or when another skill names a principle by bolded name and you need its full rule."
+description: "The twenty-two engineering principles dstack works from, one rule each, grouped as core, architecture, verification, delegation, and meta. Use at the start of any multi-step task, when dstack-mode's todolist says to read the principles, or when another skill names a principle by bolded name and you need its full rule."
 ---
 
 # Principles
 
-Twenty-one rules, one per file under `references/`. This page is the index. Each entry names when the principle applies and states its rule in one line.
+Twenty-two rules, one per file under `references/`. This page is the index. Each entry names when the principle applies and states its rule in one line.
 
 **Read the leaf file in full for any principle you actually apply.** The one-line rule here is a pointer, not the principle. Citing a principle you did not read is the failure mode this skill exists to prevent.
 
@@ -16,6 +16,7 @@ In your reply, name each principle that shaped a decision and the specific choic
 - **Laziness Protocol** ([`references/laziness-protocol.md`](references/laziness-protocol.md)). Refactoring, sizing a diff, or tempted to add abstractions, layers, or signal threading. Bias to deletion and the smallest change that solves the problem.
 - **Foundational Thinking** ([`references/foundational-thinking.md`](references/foundational-thinking.md)). Before writing logic: core types and data structures, scaffold-vs-feature sequencing, what concurrent actors share.
 - **Redesign from First Principles** ([`references/redesign-from-first-principles.md`](references/redesign-from-first-principles.md)). Integrating a new requirement into an existing design. Redesign as if it had been foundational from day one.
+- **Keep History Out of the Artifact** ([`references/keep-history-out-of-the-artifact.md`](references/keep-history-out-of-the-artifact.md)). Modifying anything with an audience beyond the conversation: UI copy, names, docs, comments, tests. The artifact describes only its current state; the delta goes in the commit, PR, or reply, never in the product.
 - **Subtract Before You Add** ([`references/subtract-before-you-add.md`](references/subtract-before-you-add.md)). Sequencing an addition, refactor, or rewrite. Remove dead weight first, then build on the simpler base.
 - **Minimize Reader Load** ([`references/minimize-reader-load.md`](references/minimize-reader-load.md)). Reviewing or shaping code that is hard to trace. Count layers and hidden state, collapse one-caller wrappers, shrink mutable scope.
 - **Outcome-Oriented Execution** ([`references/outcome-oriented-execution.md`](references/outcome-oriented-execution.md)). Planned rewrites and migrations with explicit phase boundaries. Converge on the target architecture, do not preserve throwaway compatibility states.
