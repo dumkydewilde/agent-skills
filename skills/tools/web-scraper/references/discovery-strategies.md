@@ -215,10 +215,9 @@ Two constraints decide whether this pattern helps at all:
 
 Beyond that: undocumented means unversioned, so it can vanish without a
 deprecation notice (Instagram's oEmbed went from open to app-token-required
-this way). `robots.txt` and ToS still apply the same as any other route.
-And the rate-limit budget is often thinner than it looks, because the host
-is a CDN sized for cached embed traffic rather than for someone iterating a
-list, so pace accordingly.
+this way). And the rate-limit budget is often thinner than it looks,
+because the host is a CDN sized for cached embed traffic rather than for
+someone iterating a list, so pace accordingly.
 
 ---
 
@@ -292,10 +291,16 @@ Expect one or more of:
 - **TLS fingerprinting:** stock clients get flagged, so you need
   `curl_cffi` impersonation.
 
-Reproducing the full app bootstrap is brittle and intrusive. For polite,
-scheduled scraping, the public web source (SSR HTML, `__NEXT_DATA__`, or a
-non-disallowed web API) is usually simpler, more stable, and safer. Treat
-the mobile API as a map and a last-resort source, not the default.
+Reproducing the full app bootstrap is brittle and intrusive. For scheduled
+scraping, the public web source (SSR HTML, `__NEXT_DATA__`, or a plain web
+API) is usually simpler, more stable, and safer. Treat the mobile API as a
+map and a last-resort source, not the default.
+
+When the app belongs to your own client, skip most of this. Decompiling it
+to rediscover their own API is slow work that their backend team can
+shortcut with one message. Ask for the API docs, the Retrofit interface, or
+a token first, and reach for `jadx` only when nobody left at the company
+knows how the app talks to the server.
 
 To confirm what a mobile endpoint really needs, capture live app traffic
 with mitmproxy or Burp (modern apps pin certs: use a rooted emulator plus
@@ -739,7 +744,10 @@ After running discovery, produce a brief report for the user:
 - Likely the most stable (API contracts change less than HTML)
 
 ### Caveats
-- robots.txt allows /api/ paths
+- robots.txt disallows /api/ (noted, not binding on an owner-authorized job)
 - No visible rate limit headers (recommend 1-2 req/s)
-- TOS does not explicitly prohibit scraping
+- No login required, so no account terms apply
 ```
+
+Report `robots.txt` as a fact about the site, not as a verdict on the
+approach. Flag account terms only when the data needs a login.

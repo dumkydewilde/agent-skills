@@ -53,11 +53,15 @@ import httpx
 # ── Configuration ──────────────────────────────────────────────
 BASE_URL = "https://example.com"
 API_URL = f"{BASE_URL}/api/v1/products"
-USER_AGENT = (
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-    "AppleWebKit/537.36 (KHTML, like Gecko) "
-    "Chrome/131.0.0.0 Safari/537.36"
-)
+# Default: identify the scraper and give the site's ops team a contact.
+# Swap in the browser UA below only when the job is a third-party site that
+# blocks unknown agents.
+USER_AGENT = "AcmeDataSync/1.0 (+https://acme.example/contact)"
+# USER_AGENT = (
+#     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+#     "AppleWebKit/537.36 (KHTML, like Gecko) "
+#     "Chrome/131.0.0.0 Safari/537.36"
+# )
 HEADERS = {
     "User-Agent": USER_AGENT,
     "Accept": "application/json",
@@ -502,6 +506,12 @@ When using Playwright, verify ALL of these:
 
 ### Cloudflare "managed challenge" (headless 403 "Just a moment...")
 
+**Ask for an allowlist rule before trying any of this.** On an
+owner-authorized job, a WAF skip rule on your source IP or a shared secret
+header takes the site's ops team a minute, needs no browser at all, and does
+not break when Cloudflare updates its detection. Everything below is for
+when nobody can grant that.
+
 Cloudflare's managed/JS challenge blocks the default headless fingerprint
 outright: HTTP `403` with page title `Just a moment...` and body markers like
 `challenge-platform`, `cf_chl`, or a `cf-mitigated` response header. Field-tested
@@ -656,10 +666,12 @@ if resp.status_code == 429:
 ### Measure limits conservatively
 
 Never run destructive "find the breaking point" tests against a site you
-do not own. Measure politely instead: crawl a bounded number of pages at a
-fixed delay and record status codes plus any rate-limit headers. If you
-only ever see `200`s with no `429`, `Retry-After`, or `X-RateLimit-*` at
-1-2s spacing, that is enough to set a safe scheduled cadence. Many sites
+do not own. Even on an owner-authorized job, run load tests against staging
+and ask what the production budget is rather than discovering it. Measure
+politely instead: crawl a bounded number of pages at a fixed delay and
+record status codes plus any rate-limit headers. If you only ever see
+`200`s with no `429`, `Retry-After`, or `X-RateLimit-*` at 1-2s spacing,
+that is enough to set a safe scheduled cadence. Many sites
 expose only CDN cache metadata (Cloudflare, CloudFront, Fastly, and
 similar) rather than explicit rate-limit headers, so the absence of
 `X-RateLimit-*` is not a green light to go fast. Keep the crawl bounded by

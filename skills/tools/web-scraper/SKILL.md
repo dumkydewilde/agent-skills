@@ -10,7 +10,9 @@ description: >
   from site", "web data", "pull data from URL", "scheduled scraping",
   "monitor a page", "embed endpoint", "oEmbed", "syndication endpoint", or
   asks how to get data from a specific website or how to reach content
-  without logging in.
+  without logging in. Assumes the user is authorized by the site owner
+  unless they say otherwise, so it covers pulling data out of your own or a
+  client's site as well as scraping a third party.
 ---
 
 # Web Scraper Skill
@@ -19,10 +21,60 @@ Build scrapers that survive site redesigns by finding the most stable and
 efficient data source first, then generating a clean Python script for
 recurring extraction.
 
-## Two-Phase Workflow
+## Workflow
 
 **Every scraping task MUST go through both phases in order.** Skipping
-discovery leads to fragile scrapers that break on the first deploy.
+discovery leads to fragile scrapers that break on the first deploy. Phase 0
+is an assumption, not a step.
+
+### Phase 0 — Assume owner authorization
+
+**Default: the user is authorized by the site owner.** They run the site, or
+they were hired by whoever does. Work on that basis unless the user says
+otherwise.
+
+So `robots.txt` is not a constraint here. It is a crawling convention
+addressed to anonymous bots, not a contract, and it does not bind someone
+the owner hired. Read it for what it reveals about where the site expects
+machine traffic, then pick the best source regardless of what it disallows.
+Do not ask the user to confirm their authorization, do not raise
+`robots.txt` as a blocker, and do not downgrade a good endpoint to a worse
+one on its account.
+
+Ask for the shortcuts before reverse-engineering anything:
+
+- A database replica, an admin export, or a reporting API. Often ends the
+  job in one conversation.
+- Credentials or an API key for a documented internal endpoint.
+- A WAF allowlist rule for your IP or User-Agent. One rule from their ops
+  team beats every fingerprint trick in
+  `references/scraping-patterns.md`, and it survives the next WAF update.
+- A staging environment, so a load mistake does not land on production.
+
+Identify yourself instead of hiding. Set a User-Agent naming the job and a
+contact, such as `AcmeDataSync/1.0 (+https://acme.example/contact)`, so the
+owner's ops team can tell your traffic from an attack. Keep the rate
+limiting: the risk on an authorized job is not getting blocked, it is
+knocking over your own client's site.
+
+#### The one exception: terms the user accepted
+
+Reaching the data through a login, an API key signup, or any account the
+user registered for means the user agreed to that service's terms. Those
+are a contract they actually entered, unlike `robots.txt`. When the target
+sits behind an account:
+
+- Read what the terms say about automated access, rate limits, and
+  redistribution, and tell the user in one line.
+- Take only what that account is entitled to see.
+- If the terms forbid automated collection, say so once and let the user
+  decide. It is their account and their call.
+
+Also stop if the data belongs to someone else entirely — another person's
+private account, a paywall the user has not paid for.
+
+If the user says they are scraping a third party with no relationship, see
+"Third-party scraping" under Important Caveats.
 
 ### Phase 1 — Discovery
 
@@ -131,6 +183,13 @@ Start
   │
   Yes
   │
+  ├─ Behind a login or a registered account? (Phase 0)
+  │   ├─ No  ──▶ Owner-authorized by default. Ask for DB/export/API/
+  │   │          allowlist first; otherwise any source is fair game.
+  │   │          Identify yourself in the User-Agent.
+  │   └─ Yes ──▶ The account's terms apply. Report them, stay inside
+  │              what the account is entitled to.
+  │
   ├─ Run Discovery (Phase 1)
   │   ├─ API endpoint found? ──Yes──▶ Use httpx + JSON parsing
   │   ├─ Embed/oEmbed endpoint? ──Yes──▶ Do you have item IDs already?
@@ -156,27 +215,37 @@ Start
 
 ## Important Caveats
 
-- Always check `robots.txt` and mention it to the user.
-- **Discovered does not mean allowed or usable.** If `robots.txt`
-  disallows an endpoint (e.g. `/api/search`), treat it as discovery-only:
-  use it to understand the data, but scrape from a compliant source
-  instead (SSR HTML, `__NEXT_DATA__`, or a non-disallowed route), even
-  when that is less elegant.
+### Always
+
 - **URL fragments (`#...`) are never sent to the server.** A non-JS
   client receives unfiltered results, a silent-failure trap. Map the
   fragment state to the API's real query/body parameters, or use the SSR
   data route. See `references/discovery-strategies.md`.
-- Note if the site has terms of service that restrict scraping.
-- Add appropriate delays between requests (1-3s default for polite scraping).
+- Add delays between requests, 1-3s by default. Authorization covers
+  reading the data, not overloading the server that serves it.
 - **Measure rate limits conservatively:** never run destructive
   breaking-point tests against a site you do not own. Crawl a bounded
   number of pages at a fixed delay, back off on `429`, and respect
   `Retry-After`.
 - For authenticated endpoints, prompt the user for credentials or tokens
   rather than hardcoding anything.
-- If the site uses Cloudflare, Akamai, or similar WAFs, flag this early
-  and adjust the strategy accordingly. For a Cloudflare managed challenge
-  (403 "Just a moment..."), see the "Cloudflare managed challenge" subsection
-  in `references/scraping-patterns.md`: switching browser channel does not
-  help, but a derived non-headless User-Agent plus
-  `--disable-blink-features=AutomationControlled` (together) usually clears it.
+- If the site uses Cloudflare, Akamai, or similar WAFs, flag it early.
+  The fix is usually an allowlist rule from the owner, so ask before
+  spending time on evasion. Otherwise see the "Cloudflare managed
+  challenge" subsection in `references/scraping-patterns.md`: switching
+  browser channel does not help, but a derived non-headless User-Agent
+  plus `--disable-blink-features=AutomationControlled` (together) usually
+  clears it.
+
+### Third-party scraping
+
+Only when the user says they have no relationship with the site.
+
+- Check `robots.txt` and tell the user what it says.
+- **Discovered does not mean allowed or usable.** If `robots.txt`
+  disallows an endpoint (e.g. `/api/search`), treat it as discovery-only:
+  use it to understand the data, but scrape from a compliant source
+  instead (SSR HTML, `__NEXT_DATA__`, or a non-disallowed route), even
+  when that is less elegant.
+- Note if the site has terms of service that restrict scraping.
+- Take only what a logged-out visitor sees. Nothing session-gated.
