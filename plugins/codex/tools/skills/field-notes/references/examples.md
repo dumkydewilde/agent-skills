@@ -87,6 +87,12 @@ Read the pages for:
   `tests/test_notebooks.py`, so this is the one place in the skill where a
   broken link is a bug rather than a placeholder.
 
+`food-notebook-index-rendered.jpg`, beside the examples, is a fuller desk than
+this one: twelve sheets in one notebook, from the shelf on
+[dumky.net](https://www.dumky.net/field-notes/). Look at it for how an index
+reads once it is past a handful of cards — the marks carry the grid, and the
+one-line captions are the only type on the desk.
+
 Read the markdown for the format itself, which
 `references/markdown-source.md` documents. Between them the five notes exercise
 all of it: all three variants, the inferred variant and the override, a Mermaid

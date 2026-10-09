@@ -19,6 +19,13 @@ description: >
 
 # Field Notes Poster
 
+![Twelve food sheets laid out on a notebook index, each a drawn mark on pale
+paper captioned in typewriter type](assets/examples/food-notebook-index-rendered.jpg)
+
+*One notebook of twelve sheets, built from markdown by `scripts/build.py`. It is
+the food notebook on [dumky.net](https://www.dumky.net/field-notes/), where the
+whole shelf is live.*
+
 A field-notes sheet is 4:3 landscape, split into two regions with no dividing
 rule: one carries the record, the other carries a hand-made mark, captioned in
 small typewriter type on aged paper. Whitespace is part of the layout, not space
