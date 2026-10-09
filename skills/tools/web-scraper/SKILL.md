@@ -12,7 +12,9 @@ description: >
   asks how to get data from a specific website or how to reach content
   without logging in. Assumes the user is authorized by the site owner
   unless they say otherwise, so it covers pulling data out of your own or a
-  client's site as well as scraping a third party.
+  client's site as well as scraping a third party. Also use it to red-team
+  a site's scraping defenses: "how exposed is our data", "test our bot
+  protection", "what could a scraper get from us", "scraping resilience".
 ---
 
 # Web Scraper Skill
@@ -41,7 +43,13 @@ Do not ask the user to confirm their authorization, do not raise
 `robots.txt` as a blocker, and do not downgrade a good endpoint to a worse
 one on its account.
 
-Ask for the shortcuts before reverse-engineering anything:
+#### Which job: extraction or red team
+
+Authorized work splits two ways and they want opposite things from
+discovery. Ask which, if the request does not already say.
+
+**Extraction.** The goal is the data, by the most stable path. Take every
+shortcut going, and ask for them before reverse-engineering anything:
 
 - A database replica, an admin export, or a reporting API. Often ends the
   job in one conversation.
@@ -56,6 +64,39 @@ contact, such as `AcmeDataSync/1.0 (+https://acme.example/contact)`, so the
 owner's ops team can tell your traffic from an attack. Keep the rate
 limiting: the risk on an authorized job is not getting blocked, it is
 knocking over your own client's site.
+
+**Red team.** The goal is a defensible answer to "what could an outsider
+take from us, and at what cost". Every shortcut above invalidates that
+answer, so take none of them. Work with what a stranger has: no
+credentials, no allowlist, no staging, no backend contact. Browser
+impersonation and the whole anti-detection ladder are in scope here,
+unlike on an extraction job, because getting past the defense is the
+measurement.
+
+- Get the rules of engagement in writing first: in-scope hosts, the time
+  window, whether account signup, residential proxies, and CAPTCHA-solving
+  services are allowed, and who to call when something breaks.
+- Quarantine insider knowledge. If someone at the company handed you an
+  endpoint, mark it "known, not discovered" in the report instead of
+  counting it as a finding, then ask separately whether a stranger could
+  have found it.
+- Agree a deconfliction marker: a header value or a source IP list held by
+  one named contact, so your traffic can be told apart from a real attack
+  afterwards. Do not give it to the people whose detection you are testing.
+- Record cost per approach, not just feasibility: wall-clock time, proxy
+  and solver spend, and the skill it took. "Possible" and "worth someone's
+  while" are different findings, and the second one sets their budget.
+- The write-up is the deliverable, not the dataset. Which layer stopped
+  you, which one did not, and what it costs to close the gap.
+
+Stop rules that hold even with a signed engagement:
+
+- Prove extraction with a bounded sample, then stop. Pulling the whole
+  table does not make the finding more true.
+- Real personal data stays where it is. A row count and a field list prove
+  the exposure. The records themselves only create a breach you now own.
+- Scraping resilience is not load capacity. Do not probe the point where
+  the site falls over unless that is scoped and scheduled separately.
 
 #### The one exception: terms the user accepted
 
@@ -183,12 +224,15 @@ Start
   │
   Yes
   │
-  ├─ Behind a login or a registered account? (Phase 0)
-  │   ├─ No  ──▶ Owner-authorized by default. Ask for DB/export/API/
-  │   │          allowlist first; otherwise any source is fair game.
-  │   │          Identify yourself in the User-Agent.
-  │   └─ Yes ──▶ The account's terms apply. Report them, stay inside
-  │              what the account is entitled to.
+  ├─ What is the job? (Phase 0, owner-authorized by default)
+  │   ├─ Extraction ──▶ Ask for DB/export/API/allowlist first; otherwise
+  │   │                 any source is fair game. Identify yourself in the
+  │   │                 User-Agent.
+  │   ├─ Red team   ──▶ Take no shortcuts, outside view only. Record cost
+  │   │                 per approach. The write-up is the deliverable.
+  │   └─ Behind a login or registered account? ──▶ Either way the
+  │                     account's terms apply. Report them, stay inside
+  │                     what the account is entitled to.
   │
   ├─ Run Discovery (Phase 1)
   │   ├─ API endpoint found? ──Yes──▶ Use httpx + JSON parsing
@@ -229,9 +273,10 @@ Start
   `Retry-After`.
 - For authenticated endpoints, prompt the user for credentials or tokens
   rather than hardcoding anything.
-- If the site uses Cloudflare, Akamai, or similar WAFs, flag it early.
-  The fix is usually an allowlist rule from the owner, so ask before
-  spending time on evasion. Otherwise see the "Cloudflare managed
+- If the site uses Cloudflare, Akamai, or similar WAFs, flag it early. On
+  an extraction job the fix is usually an allowlist rule from the owner, so
+  ask before spending time on evasion. On a red team, the WAF is the thing
+  under test, so do not ask. See the "Cloudflare managed
   challenge" subsection in `references/scraping-patterns.md`: switching
   browser channel does not help, but a derived non-headless User-Agent
   plus `--disable-blink-features=AutomationControlled` (together) usually

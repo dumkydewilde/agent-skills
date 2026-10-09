@@ -296,11 +296,19 @@ scraping, the public web source (SSR HTML, `__NEXT_DATA__`, or a plain web
 API) is usually simpler, more stable, and safer. Treat the mobile API as a
 map and a last-resort source, not the default.
 
-When the app belongs to your own client, skip most of this. Decompiling it
-to rediscover their own API is slow work that their backend team can
-shortcut with one message. Ask for the API docs, the Retrofit interface, or
-a token first, and reach for `jadx` only when nobody left at the company
-knows how the app talks to the server.
+On an **extraction** job for your own client, skip most of this.
+Decompiling their app to rediscover their own API is slow work that their
+backend team can shortcut with one message. Ask for the API docs, the
+Retrofit interface, or a token first, and reach for `jadx` only when nobody
+left at the company knows how the app talks to the server.
+
+On a **red team**, the opposite: the APK is the point, not a detour. A
+published app hands every attacker the same route list, baked-in keys, and
+internal vocabulary you are about to pull out of it, so what you find here
+is itself a finding. Report the credentials, non-production hosts, and
+undocumented routes it leaks even when you never call any of them, and say
+how long it took, because `apktool` plus `jadx` on a public download is an
+afternoon of work for someone with no access at all.
 
 To confirm what a mobile endpoint really needs, capture live app traffic
 with mitmproxy or Burp (modern apps pin certs: use a rooted emulator plus
@@ -751,3 +759,9 @@ After running discovery, produce a brief report for the user:
 
 Report `robots.txt` as a fact about the site, not as a verdict on the
 approach. Flag account terms only when the data needs a login.
+
+On a red-team engagement this report *is* the deliverable, so change its
+shape: add a cost column to the findings table (wall-clock time, proxy or
+solver spend, skill required), lead the recommendation with which defenses
+held and which did not, and mark anything an insider told you as "known,
+not discovered" so the exposure is not overstated.

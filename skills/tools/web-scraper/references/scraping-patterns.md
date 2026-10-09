@@ -506,11 +506,15 @@ When using Playwright, verify ALL of these:
 
 ### Cloudflare "managed challenge" (headless 403 "Just a moment...")
 
-**Ask for an allowlist rule before trying any of this.** On an
-owner-authorized job, a WAF skip rule on your source IP or a shared secret
-header takes the site's ops team a minute, needs no browser at all, and does
-not break when Cloudflare updates its detection. Everything below is for
-when nobody can grant that.
+**On an extraction job, ask for an allowlist rule before trying any of
+this.** A WAF skip rule on your source IP or a shared secret header takes
+the site's ops team a minute, needs no browser at all, and does not break
+when Cloudflare updates its detection. Everything below is for when nobody
+can grant that.
+
+**On a red team, do not ask.** The WAF is what you are measuring. Record
+which of these steps the challenge survived, how long each took, and what
+it would cost at scale, because that number is the finding.
 
 Cloudflare's managed/JS challenge blocks the default headless fingerprint
 outright: HTTP `403` with page title `Just a moment...` and body markers like
@@ -666,8 +670,10 @@ if resp.status_code == 429:
 ### Measure limits conservatively
 
 Never run destructive "find the breaking point" tests against a site you
-do not own. Even on an owner-authorized job, run load tests against staging
-and ask what the production budget is rather than discovering it. Measure
+do not own. This holds with a signed engagement too, red teams included:
+scraping resilience and load capacity are separate tests, so run load tests
+against staging and ask what the production budget is rather than
+discovering it. Measure
 politely instead: crawl a bounded number of pages at a fixed delay and
 record status codes plus any rate-limit headers. If you only ever see
 `200`s with no `429`, `Retry-After`, or `X-RateLimit-*` at 1-2s spacing,
