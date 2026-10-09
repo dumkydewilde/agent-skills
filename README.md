@@ -13,6 +13,13 @@ General-purpose utilities.
 | `web-scraper` | Build resilient scrapers via a discovery-then-script workflow |
 | `field-notes` | Build field notes: one sheet, a notebook of them, or a shelf of notebooks. Markdown sources, HTML templates for a swipeable deck on aged paper, the indexes that open it, and image prompts for printed posters |
 
+![Twelve food sheets on a notebook index, each a drawn mark on pale paper
+captioned in typewriter type](skills/tools/field-notes/assets/examples/food-notebook-index-rendered.jpg)
+
+*What `field-notes` builds, at the middle size: one notebook of twelve sheets,
+generated from markdown. The whole shelf is live on
+[dumky.net](https://www.dumky.net/field-notes/).*
+
 ## `dstack`
 
 A working style for non-trivial engineering and writing work. Forked from
