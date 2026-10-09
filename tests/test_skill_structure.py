@@ -80,6 +80,22 @@ class SkillFrontmatterTest(unittest.TestCase):
 
 
 class SkillLinkTest(unittest.TestCase):
+    def test_dstack_mode_explains_installed_path_resolution(self) -> None:
+        paths = (
+            ROOT / "skills" / "dstack" / "dstack-mode" / "SKILL.md",
+            ROOT / "plugins" / "codex" / "dstack" / "skills" / "dstack-mode" / "SKILL.md",
+        )
+
+        for path in paths:
+            with self.subTest(path=path.relative_to(ROOT)):
+                text = path.read_text()
+
+                self.assertIn(
+                    "Resolve `playbooks/` and `references/` paths relative to this file.",
+                    text,
+                )
+                self.assertNotIn("See `docs/dstack/UPSTREAM.md`", text)
+
     def test_relative_links_resolve(self) -> None:
         for group in SKILL_GROUPS:
             for md in sorted((ROOT / "skills" / group).rglob("*.md")):

@@ -5,7 +5,13 @@ description: "Dumky's rigorous engineering mode for non-trivial work. Matches th
 
 # Dstack mode
 
-Ported from [pstack](https://github.com/cursor/plugins/tree/main/pstack) by Lauren Tan. See `docs/dstack/UPSTREAM.md` in the tools repo for what changed and why.
+Ported from [pstack](https://github.com/cursor/plugins/tree/main/pstack) by Lauren Tan. The [upstream notes](https://github.com/dumkydewilde/tools/blob/main/docs/dstack/UPSTREAM.md) explain what changed and why.
+
+## Installed layout
+
+The directory that contains this `SKILL.md` is the installed dstack-mode root. Resolve `playbooks/` and `references/` paths relative to this file. Do not derive a path from the source repository layout.
+
+If a required local file is absent, report its exact path and fix the package in a separate pull request. Do not substitute a guessed file. Continue only when the missing file is clearly optional.
 
 ## When this applies
 
