@@ -1,9 +1,9 @@
 ---
 name: web-scraper
 description: >
-  Build reliable, production-grade web scrapers through a two-phase approach:
-  Discovery (finding the best data source on a site) then Scraping (generating a
-  Python script for scheduled extraction). Use this skill whenever the user wants
+  Build reliable, production-grade web scrapers: settle who the job is for,
+  find the best data source on the site, then generate a Python script for
+  scheduled extraction. Use this skill whenever the user wants
   to scrape a website, extract data from web pages, build a crawler, set up
   recurring data collection, reverse-engineer a site's API, or find hidden data
   endpoints. Also trigger when the user mentions "scrape", "crawl", "extract
@@ -12,7 +12,7 @@ description: >
   asks how to get data from a specific website or how to reach content
   without logging in. Assumes the user is authorized by the site owner
   unless they say otherwise, so it covers pulling data out of your own or a
-  client's site as well as scraping a third party. Also use it to red-team
+  client's site as well as scraping a third party, and it covers red-teaming
   a site's scraping defenses: "how exposed is our data", "test our bot
   protection", "what could a scraper get from us", "scraping resilience".
 ---
@@ -25,11 +25,10 @@ recurring extraction.
 
 ## Workflow
 
-**Every scraping task MUST go through both phases in order.** Skipping
-discovery leads to fragile scrapers that break on the first deploy. Phase 0
-is an assumption, not a step.
+**Every scraping task MUST go through all three phases in order.** Skipping
+discovery leads to fragile scrapers that break on the first deploy.
 
-### Phase 0 — Assume owner authorization
+### Phase 1 — Authorization
 
 **Default: the user is authorized by the site owner.** They run the site, or
 they were hired by whoever does. Work on that basis unless the user says
@@ -116,7 +115,7 @@ private account, a paywall the user has not paid for.
 If the user says they are scraping a third party with no relationship, see
 "Third-party scraping" under Important Caveats.
 
-### Phase 1 — Discovery
+### Phase 2 — Discovery
 
 Goal: find the most efficient and stable way to get the data. Prefer
 structured endpoints over DOM parsing. Work down the priority list until you
@@ -175,7 +174,7 @@ Discovery tools:
 Output of discovery: a short report documenting what was found, which
 approach is recommended, and why.
 
-### Phase 2 — Scraping Script Generation
+### Phase 3 — Scraping Script Generation
 
 Goal: produce a single Python script the user can run on a schedule (daily,
 monthly, etc.) with minimal dependencies.
@@ -223,7 +222,7 @@ Start
   │
   Yes
   │
-  ├─ What is the job? (Phase 0, owner-authorized by default)
+  ├─ What is the job? (Phase 1, owner-authorized by default)
   │   ├─ Extraction ──▶ Any source is fair game. Use the access in the
   │   │                 brief, never wait on the client's engineers.
   │   │                 Identify yourself in the User-Agent.
@@ -233,7 +232,7 @@ Start
   │                     account's terms apply. Report them, stay inside
   │                     what the account is entitled to.
   │
-  ├─ Run Discovery (Phase 1)
+  ├─ Run Discovery (Phase 2)
   │   ├─ API endpoint found? ──Yes──▶ Use httpx + JSON parsing
   │   ├─ Embed/oEmbed endpoint? ──Yes──▶ Do you have item IDs already?
   │   │   ├─ Yes ──▶ Use httpx + embed endpoint (no auth needed)
@@ -250,7 +249,7 @@ Start
   │
   ├─ Report findings to user
   │
-  ├─ Run Scraping (Phase 2)
+  ├─ Run Scraping (Phase 3)
   │   └─ Generate Python script following patterns in reference file
   │
   └─ Deliver script + usage instructions
