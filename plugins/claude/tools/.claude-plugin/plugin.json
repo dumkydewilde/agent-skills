@@ -1,6 +1,6 @@
 {
   "name": "tools",
-  "description": "General-purpose tools: conversation-history search, web-scraper, field-notes, and wizard scripts that walk a human through manual setup.",
+  "description": "General-purpose tools: conversation-history search, web-scraper, field-notes, and wizard scripts that walk a human through manual setup. The wizard skill is ported from mattpocock/skills.",
   "version": "0.4.0",
   "author": {
     "name": "Dumky de Wilde"
