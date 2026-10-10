@@ -1,0 +1,21 @@
+{
+  "name": "studio",
+  "version": "0.4.0",
+  "description": "Human-in-the-loop skills: get grilled on a decision, turn a blocked question into a questionnaire, mine yourself for writing fragments and shape them into an article, and chart work too big for one session as a map on Linear. Ported from mattpocock/skills.",
+  "author": {
+    "name": "Dumky de Wilde"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Studio",
+    "shortDescription": "Work it out with a human",
+    "longDescription": "The skills that need a person in the room. Get interviewed in rounds until a decision is settled, turn a question you cannot answer into a questionnaire for the one person who can, mine yourself for raw writing fragments and shape them into an article paragraph by paragraph, and chart work too big for one session as a map of decision tickets on Linear. Ported from Matt Pocock's skills, MIT.",
+    "developerName": "Dumky de Wilde",
+    "category": "Productivity",
+    "defaultPrompt": "Grill me on this until the decision is settled.",
+    "capabilities": [
+      "Read",
+      "Write"
+    ]
+  }
+}

@@ -8,7 +8,7 @@ import unittest
 
 
 ROOT = Path(__file__).parents[1]
-PLUGINS = ("tools", "dstack")
+PLUGINS = ("tools", "dstack", "studio")
 IGNORED_PARTS = {"__pycache__", ".DS_Store"}
 
 

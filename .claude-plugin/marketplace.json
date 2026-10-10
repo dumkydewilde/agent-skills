@@ -5,23 +5,30 @@
     "url": "https://github.com/dumkydewilde/agent-skills"
   },
   "metadata": {
-    "description": "Agent skills for Claude Code and Codex: general-purpose tools and the dstack engineering workflow.",
-    "version": "0.3.0"
+    "description": "Agent skills for Claude Code and Codex: general-purpose tools, the dstack engineering workflow, and the studio skills that need a human in the room.",
+    "version": "0.4.0"
   },
   "plugins": [
     {
       "name": "tools",
       "source": "./plugins/claude/tools",
-      "description": "General-purpose tools: conversation-history search, web-scraper, and field-notes.",
-      "version": "0.3.0",
+      "description": "General-purpose tools: conversation-history search, web-scraper, field-notes, and wizard scripts that walk a human through manual setup.",
+      "version": "0.4.0",
       "category": "productivity"
     },
     {
       "name": "dstack",
       "source": "./plugins/claude/dstack",
       "description": "Rigorous engineering workflows: playbook routing, twenty-two principles, multi-reviewer design and review, and unslopped prose. Ported from cursor/plugins pstack.",
-      "version": "0.3.0",
+      "version": "0.4.0",
       "category": "developer-tools"
+    },
+    {
+      "name": "studio",
+      "source": "./plugins/claude/studio",
+      "description": "Human-in-the-loop skills: get grilled on a decision, turn a blocked question into a questionnaire, mine yourself for writing fragments and shape them into an article, and chart work too big for one session as a map on Linear. Ported from mattpocock/skills.",
+      "version": "0.4.0",
+      "category": "productivity"
     }
   ]
 }
