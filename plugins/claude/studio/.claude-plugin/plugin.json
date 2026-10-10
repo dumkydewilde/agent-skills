@@ -1,0 +1,8 @@
+{
+  "name": "studio",
+  "description": "Human-in-the-loop skills: get grilled on a decision, turn a blocked question into a questionnaire, mine yourself for writing fragments and shape them into an article, and chart work too big for one session as a map on Linear. Ported from mattpocock/skills.",
+  "version": "0.4.0",
+  "author": {
+    "name": "Dumky de Wilde"
+  }
+}

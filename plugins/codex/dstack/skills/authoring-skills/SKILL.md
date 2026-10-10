@@ -27,6 +27,10 @@ Do not write one for a one-off solution, a standard practice already documented 
 
 This is the **prove-it-works** principle applied to prose. For a structural change to an existing skill, the Eval playbook (`dstack-mode/playbooks/eval.md`) runs the blinded version of the same loop.
 
+## The theory underneath
+
+[`references/writing-for-agents.md`](references/writing-for-agents.md) covers context pointers, context load versus cognitive load, the information hierarchy, progressive disclosure, completion criteria, leading words, negation, and the no-op test. Read it when a skill does not trigger, when one has grown past a page, or when deciding what to inline and what to push behind a pointer.
+
 ## Frontmatter is the trigger
 
 The `description` is the only thing a router sees before deciding whether to load the skill. A skill that never fires is almost always a description problem, not a body problem.

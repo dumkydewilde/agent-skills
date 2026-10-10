@@ -8,7 +8,7 @@ import unittest
 
 
 ROOT = Path(__file__).parents[1]
-SKILL_GROUPS = ("tools", "dstack")
+SKILL_GROUPS = ("tools", "dstack", "studio")
 
 FRONTMATTER = re.compile(r"^---\n(.*?)\n---\n", re.S)
 NAME = re.compile(r"^name:\s*(.+)$", re.M)

@@ -1,11 +1,11 @@
 ---
 name: reflect
-description: "Spawn three parallel review subagents over the active transcript, surface learnings, and route each to a concrete edit on an existing skill. Use when the user says reflect. Not for reviewing a plan, a design, or a diff; that is the interrogate skill."
+description: "Spawn four parallel review subagents over the active transcript, surface learnings, and route each to a concrete edit on an existing skill. Use when the user says reflect. Not for reviewing a plan, a design, or a diff; that is the interrogate skill."
 ---
 
 # Reflect
 
-Mine the current conversation for durable learnings, then route them into skill edits.
+Mine the current conversation for durable learnings, then route them into skill edits and environment changes.
 
 ## When to invoke
 
@@ -31,15 +31,18 @@ Claude Code writes one `<session-uuid>.jsonl` per session under the project slug
 
 For each candidate, read the first JSONL line and check that `message.content[0].text` contains the conversation's opening user prompt. Take the matching path. If no path resolves, write a tight digest of the session and pass that instead.
 
-### 2. Spawn three reviewers in parallel
+### 2. Spawn four reviewers in parallel
 
-One message, three `Agent` calls, `subagent_type: general-purpose`, explicit `model:` on each. Reviewers need MCP access for context lookups (tickets, chat threads, observability traces referenced in the transcript), so keep `general-purpose`. The prompt forbids file writes; the parent applies edits.
+One message, four `Agent` calls, `subagent_type: general-purpose`, explicit `model:` on each. Reviewers need MCP access for context lookups (tickets, chat threads, observability traces referenced in the transcript), so keep `general-purpose`. The prompt forbids file writes; the parent applies edits.
 
 | Lens | `model` | Prompt template |
 |---|---|---|
 | Judgment | your configured reflect-judgment model (default `fable`) | `references/judgment-reviewer.md` |
 | Tooling | your configured reflect-tooling model (default `opus`) | `references/tooling-reviewer.md` |
 | Divergent | your configured reflect-judgment model (default `fable`) | `references/divergent-reviewer.md` |
+| Environment | your configured reflect-tooling model (default `opus`) | [`references/environment-audit.md`](references/environment-audit.md) |
+
+The first three lenses produce skill edits. The Environment lens produces repo and tooling changes instead: navigation pointers, missing lint or CI guardrails, token-inefficient MCP servers, no-op lines in steering files. Its findings skip the Routing field in step 5 and file under Backlog.
 
 Pass each template verbatim, substituting the transcript path or digest where marked. Reviewers return findings in the `Agent` response body.
 

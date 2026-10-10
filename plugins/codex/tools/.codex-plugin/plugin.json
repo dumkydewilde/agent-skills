@@ -1,7 +1,7 @@
 {
   "name": "tools",
-  "version": "0.3.0",
-  "description": "General-purpose tools: conversation-history search, web-scraper, and field-notes.",
+  "version": "0.4.0",
+  "description": "General-purpose tools: conversation-history search, web-scraper, field-notes, and wizard scripts that walk a human through manual setup.",
   "author": {
     "name": "Dumky de Wilde"
   },
@@ -9,7 +9,7 @@
   "interface": {
     "displayName": "Tools",
     "shortDescription": "Personal agent workflows",
-    "longDescription": "Dumky's personal general-purpose agent tools: search local assistant conversation history across Claude/Codex/ChatGPT, build resilient web scrapers via a discovery-then-script workflow, and turn markdown into field notes \u2014 a sheet, a notebook of them, or a shelf of notebooks.",
+    "longDescription": "Dumky's personal general-purpose agent tools: search local assistant conversation history across Claude, Codex and ChatGPT, build resilient web scrapers via a discovery-then-script workflow, turn markdown into field notes, and generate interactive bash wizards that walk a human through manual setup. The wizard skill is ported from Matt Pocock's skills, MIT.",
     "developerName": "Dumky de Wilde",
     "category": "Productivity",
     "defaultPrompt": "Use the tools plugin to search local conversation history, build resilient web scrapers, or make field notes.",

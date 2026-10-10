@@ -1,6 +1,6 @@
 # agent-skills
 
-Agent skills for Claude Code and Codex, shipped as two plugins. Both work in
+Agent skills for Claude Code and Codex, shipped as three plugins. All work in
 either harness from the same canonical source.
 
 ## `tools`
@@ -12,6 +12,7 @@ General-purpose utilities.
 | `conversation-history` | Search past Claude Code, Claude Desktop, Codex, and ChatGPT conversations from local logs and exports |
 | `web-scraper` | Build resilient scrapers via a discovery-then-script workflow |
 | `field-notes` | Build field notes: one sheet, a notebook of them, or a shelf of notebooks. Markdown sources, HTML templates for a swipeable deck on aged paper, the indexes that open it, and image prompts for printed posters |
+| `wizard` | Generate an interactive bash wizard that walks a human through steps only they can perform: a third-party dashboard, minting credentials, wiring CI secrets. Ported from [mattpocock/skills](https://github.com/mattpocock/skills) (MIT) |
 
 ![Twelve food sheets on a notebook index, each a drawn mark on pale paper
 captioned in typewriter type](skills/tools/field-notes/assets/examples/food-notebook-index-rendered.jpg)
@@ -48,7 +49,7 @@ skills as the steps need them. The rest are situational.
 | `tdd` | A bug has a cheap local test path, so write the failing test first |
 | `create-verification-skill` | The project has no scripted way to prove app behavior |
 | `show-me-your-work` | You want a reviewable decision trail for unattended work |
-| `reflect` | A long task landed and the lesson should become a skill edit |
+| `reflect` | A long task landed and the lesson should become a skill edit, or the environment it ran in needs an audit |
 | `authoring-skills` | You are writing or fixing a SKILL.md |
 | `no-comments` | Strip comments before review |
 | `unslop` | You are cleaning up writing, removes AI tells |
@@ -57,6 +58,13 @@ skills as the steps need them. The rest are situational.
 | `technical-writing` | Docs, RFCs, readmes, PR descriptions, commit messages |
 | `typescript-best-practices` | You are reading or editing TypeScript |
 | `setup-dstack` | Change which model runs which dstack role |
+
+Four reference files inside `dstack` are ported from
+[mattpocock/skills](https://github.com/mattpocock/skills) (MIT): the ADR format
+under `architect`, the glossary format under `technical-writing`, the
+environment-audit lens under `reflect`, and the writing-for-agents theory under
+`authoring-skills`. See
+[`docs/mattpocock/UPSTREAM.md`](docs/mattpocock/UPSTREAM.md).
 
 Claude Code also gets two subagents from this plugin, `dstack-agent` and
 `comment-sicko`. The Codex plugin format has no `agents` key, so those are
@@ -67,12 +75,34 @@ a second vendor at the table. `/setup-dstack` writes `~/.claude/dstack-models.md
 to say which model runs which role. Without that file each skill falls back to
 its inline default, which is Claude-only.
 
+## `studio`
+
+The skills that need a person in the room. dstack's **never-block-on-the-human**
+principle and `dstack-mode`'s probe-instead-of-asking rule both push the other
+way, and both are about facts. These are about decisions, which only you hold.
+Ported from [mattpocock/skills](https://github.com/mattpocock/skills) by Matt
+Pocock (MIT). [`docs/mattpocock/UPSTREAM.md`](docs/mattpocock/UPSTREAM.md) covers
+what changed in the port; `docs/mattpocock/LICENSE` carries the upstream notice.
+
+| Skill | Use it when |
+|-------|-------------|
+| `grilling` | A plan or decision needs stress-testing and you are the one who has to answer |
+| `to-questionnaire` | A decision is blocked on knowledge someone else holds, several timezones away |
+| `writing-fragments` | You have a half-formed idea and want mining for raw material, no structure yet |
+| `writing-shape` | You have a pile of material and want it shaped into an article, paragraph by paragraph |
+| `wayfinder` | The work is too big to plan in one session, so chart the route as decision tickets on Linear |
+
+`writing-fragments` and `writing-shape` are the explore and exploit halves of one
+loop. `unslop` and `technical-writing` are the polish pass that follows them, not
+a substitute for them.
+
 ## Install in Claude Code
 
 ```bash
 /plugin marketplace add dumkydewilde/agent-skills
 /plugin install tools@agent-skills
 /plugin install dstack@agent-skills
+/plugin install studio@agent-skills
 ```
 
 Or wire it into `~/.claude/settings.json` so it stays available and updates
@@ -94,6 +124,7 @@ itself:
 codex plugin marketplace add dumkydewilde/agent-skills
 codex plugin add tools@agent-skills
 codex plugin add dstack@agent-skills
+codex plugin add studio@agent-skills
 codex plugin list --marketplace agent-skills
 ```
 
@@ -112,14 +143,15 @@ agent-skills/
 ├─ .claude-plugin/marketplace.json       # Claude marketplace manifest
 ├─ .agents/plugins/marketplace.json      # Codex marketplace manifest
 ├─ skills/                               # canonical, agent-agnostic source of truth
-│  ├─ tools/{conversation-history,field-notes,web-scraper}/
-│  └─ dstack/
-│     ├─ dstack-mode/                    # router, playbooks, references, scripts
-│     ├─ principles/references/          # twenty-two principle files
-│     └─ <twenty-two more skills>/
+│  ├─ tools/{conversation-history,field-notes,web-scraper,wizard}/
+│  ├─ dstack/
+│  │  ├─ dstack-mode/                    # router, playbooks, references, scripts
+│  │  ├─ principles/references/          # twenty-two principle files
+│  │  └─ <twenty-two more skills>/
+│  └─ studio/{grilling,to-questionnaire,writing-fragments,writing-shape,wayfinder}/
 └─ plugins/
-   ├─ claude/{tools,dstack}/   (.claude-plugin/plugin.json + skills -> ../../../skills/<name>)
-   └─ codex/{tools,dstack}/    (.codex-plugin/plugin.json + real, release-ready skill copy)
+   ├─ claude/{tools,dstack,studio}/   (.claude-plugin/plugin.json + skills -> ../../../skills/<name>)
+   └─ codex/{tools,dstack,studio}/    (.codex-plugin/plugin.json + real, release-ready skill copy)
 ```
 
 The canonical skill files live under `skills/<plugin>/<skill-name>/`. The Claude
@@ -157,5 +189,8 @@ manifests.
 
 ## License
 
-MIT, see [`LICENSE`](LICENSE). The `dstack` plugin is derived from pstack by
-Lauren Tan under the same license; its notice is at `docs/dstack/LICENSE`.
+MIT, see [`LICENSE`](LICENSE). Two upstreams ride along under the same license.
+The `dstack` plugin is derived from pstack by Lauren Tan, notice at
+`docs/dstack/LICENSE`. The `studio` plugin, the `wizard` skill, and four `dstack`
+reference files are derived from [mattpocock/skills](https://github.com/mattpocock/skills)
+by Matt Pocock, notice at `docs/mattpocock/LICENSE`.

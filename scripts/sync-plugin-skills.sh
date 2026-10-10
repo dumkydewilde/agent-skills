@@ -9,7 +9,7 @@ set -euo pipefail
 # Add a plugin by adding its name here. The canonical source is
 # skills/<name>/ and the release copy is plugins/codex/<name>/skills/.
 
-PLUGINS=(tools dstack)
+PLUGINS=(tools dstack studio)
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 

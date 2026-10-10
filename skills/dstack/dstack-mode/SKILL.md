@@ -26,7 +26,7 @@ This mode is not sticky. Claude Code has no always-on mode flag, so re-invoke it
 Remaining triggers:
 
 - Nontrivial change, architecture decision, or "are we sure?" → the **how** skill.
-- About to ask the user a "which approach", "how should I", or "what should this do" question → classify it before you ask. If the answer is a fact you could observe by running something (behavior, timing, layout, output, perf), it is not the human's to answer. Sketch it via the Prototype playbook (`playbooks/prototype.md`) and let the result decide. If the task is a read-only Investigation whose deliverable is a cited answer, stay in it and answer from the evidence. Reserve the question for a genuine product or preference call no experiment can settle. The ask is the slow path. A throwaway probe usually answers faster, and it hands the human a result to react to instead of a decision to make.
+- About to ask the user a "which approach", "how should I", or "what should this do" question → classify it before you ask. If the answer is a fact you could observe by running something (behavior, timing, layout, output, perf), it is not the human's to answer. Sketch it via the Prototype playbook (`playbooks/prototype.md`) and let the result decide. If the task is a read-only Investigation whose deliverable is a cited answer, stay in it and answer from the evidence. Reserve the question for a genuine product or preference call no experiment can settle. The ask is the slow path. A throwaway probe usually answers faster, and it hands the human a result to react to instead of a decision to make. When the call genuinely is the human's, and there is more than one of them, do not dribble questions out one per turn. Run the **grilling** skill from the `studio` plugin and work the whole frontier in rounds.
 - Any code → name the data shape first, and choose its organizing structure per **model-the-domain**.
 - Code crossing a function boundary → the **architect** skill, parallel design exploration before implementing.
 - Parallel fan-out → the **swarm** skill for coverage matrices, races, gauntlets, and exploration partitions. Use **arena** for design or code bakeoffs with base selection and grafting.
@@ -34,6 +34,9 @@ Remaining triggers:
 - Nontrivial multi-step → write the throughput checkpoint (Feature step 3).
 - Any prose surface → the **unslop** skill. Your reply is a prose surface; write it per **Writing the reply**.
 - Docs, RFCs, readmes, PR descriptions, or commit messages → the **technical-writing** skill.
+- A blog post, talk, or docs page whose argument is not settled yet → the **writing-fragments** then **writing-shape** skills from the `studio` plugin. Those are the explore and exploit halves; `unslop` and `technical-writing` are the polish pass that follows them, not a substitute for them.
+- A design decision that is hard to reverse, surprising without context, and a real trade-off → write an ADR per `../architect/references/adr-format.md`. All three, or skip it.
+- A manual procedure only a human can run (a third-party dashboard, minting credentials, wiring CI secrets) → the **wizard** skill from the `tools` plugin.
 - An artifact that narrates its own edit history ("now supports", v2 names, "(was X)" copy) → the **dehistorize** skill.
 - Writing or editing a SKILL.md → the **authoring-skills** skill.
 - Before commit → the built-in `/simplify` skill over the diff.
@@ -107,6 +110,7 @@ A large or cross-cutting effort, or work the user steps away from to trust later
 - **Autonomous run.** A long task to drive to completion without stopping ("run until done", "/loop until X"). `playbooks/autonomous-run.md`.
 - **Session pickup.** Resuming or taking over prior in-flight work from a transcript, a Conductor workspace, or a pushed branch. `playbooks/session-pickup.md`.
 - **Multi-phase or multi-PR plan.** Work that spans phases or stacked PRs. `playbooks/multi-phase-plan.md`.
+- **Too big to plan at all.** The route to the destination is still fogged in and charting it is itself the work. That is past the playbooks: run the **wayfinder** skill from the `studio` plugin.
 - **Opening a PR.** Invoked at the end of every other playbook. `playbooks/opening-a-pr.md`.
 
 Upstream also ships hillclimb, runtime forensics, trace forensics, visual parity, babysit, shipping, orchestrate, autopilot-full, autopilot-stack, pause-safely, and worktree cleanup. Those are dropped here because they assume Graphite stacks, Bugbot, and cloud VMs. Recover one from upstream if you ever need it.
