@@ -6,6 +6,7 @@ Data sources:
   - Claude Code / Conductor: ~/.claude/projects/*/*.jsonl
   - Claude Desktop exports: ~/conductor/claude-desktop-export/*/conversation.json
   - Codex: ~/.codex/sessions/**/*.jsonl
+  - OpenCode: $XDG_DATA_HOME/opencode/opencode.db (read-only SQLite)
   - ChatGPT exports: conversations.json from common export locations or
     CONVERSATION_HISTORY_CHATGPT_EXPORT
 
@@ -22,6 +23,7 @@ import argparse
 import json
 import os
 import re
+import sqlite3
 import sys
 from dataclasses import dataclass
 from datetime import datetime
@@ -82,6 +84,235 @@ def clean_project_name(project_dir: Path) -> str:
     # Claude Code encodes a project's absolute path by swapping "/" for "-".
     name = project_dir.name
     return name.removeprefix(HOME_DIR_PREFIX).replace("-", "/")
+
+
+def opencode_db_path() -> Path | None:
+    """Return OpenCode's local database path without requiring its CLI."""
+    data_home = Path(
+        os.environ.get("XDG_DATA_HOME") or HOME / ".local" / "share"
+    ).expanduser()
+    data_dir = data_home / "opencode"
+    override = os.environ.get("OPENCODE_DB")
+    if override:
+        if override == ":memory:":
+            return None
+        path = Path(override).expanduser()
+        return path if path.is_absolute() else data_dir / path
+    return data_dir / "opencode.db"
+
+
+def open_opencode_db(path: Path) -> sqlite3.Connection:
+    """Open OpenCode's database in read-only mode."""
+    connection = sqlite3.connect(path.resolve().as_uri() + "?mode=ro", uri=True)
+    connection.row_factory = sqlite3.Row
+    return connection
+
+
+def sqlite_tables(connection: sqlite3.Connection) -> set[str]:
+    return {
+        row[0]
+        for row in connection.execute("SELECT name FROM sqlite_master WHERE type = 'table'")
+    }
+
+
+def sqlite_columns(connection: sqlite3.Connection, table: str) -> set[str]:
+    return {row[1] for row in connection.execute(f'PRAGMA table_info("{table}")')}
+
+
+def iter_opencode_sessions() -> Iterator[Session]:
+    path = opencode_db_path()
+    if path is None or not path.is_file():
+        return
+    connection: sqlite3.Connection | None = None
+    try:
+        connection = open_opencode_db(path)
+        tables = sqlite_tables(connection)
+    except (OSError, sqlite3.Error):
+        if connection is not None:
+            connection.close()
+        return
+
+    try:
+        fallback = path_mtime(path)
+        seen: set[str] = set()
+        for table in ("session_v2", "session"):
+            if table not in tables:
+                continue
+            columns = sqlite_columns(connection, table)
+            if "id" not in columns:
+                continue
+
+            optional_columns = ("project_id", "directory", "title", "time_created")
+            selected = ["s.id"]
+            selected.extend(
+                f"s.{column} AS {column}" if column in columns else f"NULL AS {column}"
+                for column in optional_columns
+            )
+            join_project = ""
+            project_select = "NULL AS project_name"
+            if "project" in tables and "project_id" in columns:
+                project_columns = sqlite_columns(connection, "project")
+                if {"id", "name"}.issubset(project_columns):
+                    project_select = "p.name AS project_name"
+                    join_project = " LEFT JOIN project p ON p.id = s.project_id"
+            query = (
+                f'SELECT {", ".join(selected)}, {project_select} '
+                f'FROM "{table}" s{join_project}'
+            )
+            try:
+                rows = connection.execute(query)
+                for row in rows:
+                    session_id = str(row["id"] or "")
+                    if not session_id or session_id in seen:
+                        continue
+                    seen.add(session_id)
+                    directory = row["directory"] or ""
+                    project = (
+                        row["project_name"]
+                        or (Path(directory).name if directory else "")
+                        or row["project_id"]
+                        or "opencode"
+                    )
+                    title = row["title"] or ""
+                    yield Session(
+                        session_id=session_id,
+                        source="opencode",
+                        project=str(project),
+                        path=path,
+                        timestamp=parse_timestamp(row["time_created"], fallback),
+                        extra={"title": str(title)} if title else None,
+                    )
+            except sqlite3.Error:
+                continue
+    except (OSError, sqlite3.Error):
+        return
+    finally:
+        connection.close()
+
+
+def opencode_payload_text(payload: dict[str, Any]) -> str:
+    """Extract user-facing text blocks, excluding tool and reasoning parts."""
+    texts: list[str] = []
+    direct_text = payload.get("text")
+    if isinstance(direct_text, str) and direct_text.strip():
+        texts.append(direct_text)
+
+    content = payload.get("content")
+    if isinstance(content, str) and content.strip():
+        texts.append(content)
+    elif isinstance(content, list):
+        for item in content:
+            if isinstance(item, str) and item.strip():
+                texts.append(item)
+            elif (
+                isinstance(item, dict)
+                and item.get("type") == "text"
+                and isinstance(item.get("text"), str)
+                and item["text"].strip()
+            ):
+                texts.append(item["text"])
+
+    # A schema may expose the same text both directly and in content blocks.
+    return "\n".join(dict.fromkeys(texts))
+
+
+def read_opencode_messages(session: Session) -> Iterator[tuple[str, str]]:
+    connection: sqlite3.Connection | None = None
+    try:
+        connection = open_opencode_db(session.path)
+        tables = sqlite_tables(connection)
+    except (OSError, sqlite3.Error):
+        if connection is not None:
+            connection.close()
+        return
+
+    try:
+        if "session_message" in tables:
+            columns = sqlite_columns(connection, "session_message")
+            if {"session_id", "data"}.issubset(columns):
+                type_column = "type" if "type" in columns else "NULL"
+                order_by = ", ".join(
+                    column for column in ("seq", "time_created", "id") if column in columns
+                )
+                query = (
+                    f"SELECT {type_column} AS message_type, data FROM session_message "
+                    "WHERE session_id = ?"
+                )
+                if order_by:
+                    query += f" ORDER BY {order_by}"
+                found_messages = False
+                try:
+                    for row in connection.execute(query, (session.session_id,)):
+                        try:
+                            payload = json.loads(row["data"])
+                        except (TypeError, json.JSONDecodeError):
+                            continue
+                        if not isinstance(payload, dict):
+                            continue
+                        role = row["message_type"] or payload.get("role")
+                        if role not in ("user", "assistant"):
+                            continue
+                        found_messages = True
+                        text = opencode_payload_text(payload)
+                        if text.strip():
+                            yield str(role), text
+                except sqlite3.Error:
+                    pass
+                if found_messages:
+                    return
+
+        if "message" not in tables:
+            return
+        columns = sqlite_columns(connection, "message")
+        if not {"id", "session_id", "data"}.issubset(columns):
+            return
+        order_by = ", ".join(
+            f'm."{column}"' for column in ("time_created", "id") if column in columns
+        )
+        query = "SELECT m.id, m.data FROM message m WHERE m.session_id = ?"
+        if order_by:
+            query += f" ORDER BY {order_by}"
+
+        part_columns = sqlite_columns(connection, "part") if "part" in tables else set()
+        can_read_parts = {"message_id", "data"}.issubset(part_columns)
+        part_order = ", ".join(
+            f'"{column}"' for column in ("time_created", "id") if column in part_columns
+        )
+        for row in connection.execute(query, (session.session_id,)):
+            try:
+                payload = json.loads(row["data"])
+            except (TypeError, json.JSONDecodeError):
+                continue
+            if not isinstance(payload, dict):
+                continue
+            role = payload.get("role")
+            if role not in ("user", "assistant"):
+                continue
+
+            texts = []
+            if can_read_parts:
+                part_query = "SELECT data FROM part WHERE message_id = ?"
+                if part_order:
+                    part_query += f" ORDER BY {part_order}"
+                for part_row in connection.execute(part_query, (row["id"],)):
+                    try:
+                        part = json.loads(part_row["data"])
+                    except (TypeError, json.JSONDecodeError):
+                        continue
+                    if (
+                        isinstance(part, dict)
+                        and part.get("type") == "text"
+                        and isinstance(part.get("text"), str)
+                        and part["text"].strip()
+                    ):
+                        texts.append(part["text"])
+            text = "\n".join(dict.fromkeys(texts)) or opencode_payload_text(payload)
+            if text.strip():
+                yield str(role), text
+    except sqlite3.Error:
+        return
+    finally:
+        connection.close()
 
 
 def extract_text(value: Any) -> str:
@@ -209,6 +440,7 @@ def all_sessions() -> list[Session]:
         list(iter_claude_code_sessions())
         + list(iter_claude_desktop_sessions())
         + list(iter_codex_sessions())
+        + list(iter_opencode_sessions())
         + list(iter_chatgpt_export_sessions())
     )
     sessions.sort(key=lambda s: s.timestamp, reverse=True)
@@ -309,6 +541,8 @@ def read_messages(session: Session) -> Iterator[tuple[str, str]]:
         return read_claude_desktop_messages(session.path)
     if session.source == "codex":
         return read_codex_messages(session.path)
+    if session.source == "opencode":
+        return read_opencode_messages(session)
     if session.source == "chatgpt-export":
         return read_chatgpt_export_messages(session)
     return iter(())
@@ -334,7 +568,8 @@ def snippet(text: str, max_len: int = 200) -> str:
 def matches_filter(session: Session, project_filter: str | None) -> bool:
     if not project_filter:
         return True
-    haystack = f"{session.source} {session.project} {session.session_id}".lower()
+    title = (session.extra or {}).get("title", "")
+    haystack = f"{session.source} {session.project} {session.session_id} {title}".lower()
     return project_filter in haystack
 
 
@@ -398,7 +633,12 @@ def cmd_show(args: argparse.Namespace) -> None:
     human_only = args.human_only
 
     for session in all_sessions():
-        if target not in session.session_id.lower() and target not in session.project.lower():
+        title = str((session.extra or {}).get("title", "")).lower()
+        if (
+            target not in session.session_id.lower()
+            and target not in session.project.lower()
+            and target not in title
+        ):
             continue
         print(f"Session: {session.session_id}")
         print(f"Source: {session.source}")

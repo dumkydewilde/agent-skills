@@ -9,7 +9,7 @@ General-purpose utilities.
 
 | Skill | What it does |
 |-------|--------------|
-| `conversation-history` | Search past Claude Code, Claude Desktop, Codex, and ChatGPT conversations from local logs and exports |
+| `conversation-history` | Search past Claude Code, Claude Desktop, Codex, OpenCode, and ChatGPT conversations from local logs and exports |
 | `web-scraper` | Build resilient scrapers via a discovery-then-script workflow |
 | `field-notes` | Build field notes: one sheet, a notebook of them, or a shelf of notebooks. Markdown sources, HTML templates for a swipeable deck on aged paper, the indexes that open it, and image prompts for printed posters |
 | `wizard` | Generate an interactive bash wizard that walks a human through steps only they can perform: a third-party dashboard, minting credentials, wiring CI secrets. Ported from [mattpocock/skills](https://github.com/mattpocock/skills) (MIT) |
@@ -184,8 +184,9 @@ manifests.
   commands and hooks. A skill that ships a script references it through the
   skill's announced **base directory** instead, see
   `skills/tools/conversation-history/SKILL.md`.
-- `conversation-history` reads local files only: `~/.claude/projects`,
-  `~/.codex/sessions`, and ChatGPT export drops. Nothing leaves the machine.
+- `conversation-history` reads local Claude Code/Desktop and Codex history,
+  OpenCode's local SQLite database, and ChatGPT exports. The OpenCode database
+  is opened read-only. Nothing leaves the machine.
 
 ## License
 
