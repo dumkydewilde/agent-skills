@@ -39,11 +39,16 @@ Observed shapes to verify:
   can have its visible text in `content` blocks. Preserve message UUIDs, parents and selected leaf when
   saving a tree response so alternative/regenerated branches aren't confused with the active branch.
 - **Cowork remote:** `/v1/code/sessions?tags=cowork-remote&limit=100&include_trigger_sessions=true`.
-  `external_metadata.usage` may contain tokens/cache counters/cost, and `resume_token` may indicate
-  another page. Session-list metadata is not a full conversation; label title/metadata-only matches.
+  Send `anthropic-version: 2023-06-01`; without it the endpoint returns HTTP 400. Keep the
+  `tags=cowork-remote` filter, since the unfiltered list leaves Cowork sessions out.
+  `external_metadata.usage` may contain tokens/cache counters/cost. Every response also carries a
+  `resume_token`, but it is a change-watch cursor: sending it back returned the same sessions (observed
+  2026-10-20). A response with fewer sessions than `limit` is complete. Session-list metadata is not a
+  full conversation; label title/metadata-only matches.
   Missing usage is unknown, not zero; do not fabricate a transcript from a session summary.
 
-Observe the actual next-page request rather than guessing a parameter from `resume_token`. Paginate
+Browser tools can truncate long return values, so minimize records inside the page and read the JSON
+back in chunks. Observe the actual next-page request rather than guessing a parameter. Paginate
 only within the agreed scope; record whether results are complete, capped or unavailable. Respect site
 policy/rate limits, space repeated reads politely, and avoid parallel bulk requests. Stop on 401/403,
 challenges or rate limiting and explain. Never send messages, modify settings, fire triggers or archive/delete chats.
