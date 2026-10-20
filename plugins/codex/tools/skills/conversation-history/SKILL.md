@@ -1,11 +1,11 @@
 ---
 name: conversation-history
-description: Search past Claude, Codex, and ChatGPT conversations. Use when user asks "did we discuss", "what did we talk about", "find conversation about", "search history", "past conversations", or references something from a previous assistant session.
+description: Search past Claude, Codex, OpenCode, and ChatGPT conversations. Use when user asks "did we discuss", "what did we talk about", "find conversation about", "search history", "past conversations", or references something from a previous assistant session.
 ---
 
 # Conversation History Search
 
-Search local assistant conversation history across Claude Code, Claude Desktop exports, Codex sessions, and ChatGPT exports.
+Search local assistant conversation history across Claude Code, Claude Desktop exports, Codex sessions, OpenCode, and ChatGPT exports.
 
 ## Tool Location
 
@@ -51,6 +51,12 @@ python3 "$SKILL_DIR/conversation_history.py" index
 - **Claude Code / Conductor**: `~/.claude/projects/*/*.jsonl`
 - **Claude Desktop exports**: `~/conductor/claude-desktop-export/*/conversation.json`
 - **Codex**: `~/.codex/sessions/**/*.jsonl`
+- **OpenCode v2**: `~/.local/share/opencode/opencode.db` (or
+  `$XDG_DATA_HOME/opencode/opencode.db`). OpenCode stores session metadata in
+  `session_v2` and messages in `session_message`; the script reads user/assistant
+  text blocks and opens SQLite read-only. Set `OPENCODE_DB` to use a custom
+  database path (relative paths resolve under the data directory).
+  `opencode debug paths db` prints the active database path.
 - **ChatGPT exports**: `conversations.json` from common export locations or `CONVERSATION_HISTORY_CHATGPT_EXPORT`
 
 The ChatGPT macOS app also stores local `conversations-v3-*/*.data` files under `~/Library/Application Support/com.openai.chat/`, but those files are binary/encrypted on this machine and are not directly searchable. Export ChatGPT data to `conversations.json` for searchable ChatGPT history.
@@ -67,3 +73,4 @@ The ChatGPT macOS app also stores local `conversations-v3-*/*.data` files under 
 - Search is case-insensitive.
 - Results show `[YOU]` for human messages and `[AI]` for assistant messages.
 - Use `--project codex`, `--project claude`, or `--project chatgpt` to narrow results by source.
+- Use `--project opencode` to search only OpenCode sessions.
