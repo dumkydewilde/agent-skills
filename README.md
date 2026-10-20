@@ -9,7 +9,7 @@ General-purpose utilities.
 
 | Skill | What it does |
 |-------|--------------|
-| `conversation-history` | Search past Claude Code, Claude Desktop, Codex, OpenCode, and ChatGPT conversations from local logs and exports |
+| `conversation-history` | Search past Claude Code, Claude web/Desktop, Codex, OpenCode, and ChatGPT conversations from local logs/exports, with optional consent-based browser search |
 | `web-scraper` | Build resilient scrapers via a discovery-then-script workflow |
 | `field-notes` | Build field notes: one sheet, a notebook of them, or a shelf of notebooks. Markdown sources, HTML templates for a swipeable deck on aged paper, the indexes that open it, and image prompts for printed posters |
 | `wizard` | Generate an interactive bash wizard that walks a human through steps only they can perform: a third-party dashboard, minting credentials, wiring CI secrets. Ported from [mattpocock/skills](https://github.com/mattpocock/skills) (MIT) |

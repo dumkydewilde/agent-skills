@@ -1,6 +1,6 @@
 ---
 name: conversation-history
-description: Search past Claude, Codex, OpenCode, and ChatGPT conversations. Use when user asks "did we discuss", "what did we talk about", "find conversation about", "search history", "past conversations", or references something from a previous assistant session.
+description: "Searches past Claude, Codex, OpenCode, and ChatGPT conversations from local logs/exports, and offers a consent-based browser extension for missing web history. Use for 'did we discuss', 'find conversation about', 'search history', 'search Claude web chats', 'export my conversations', or references to a previous assistant session."
 ---
 
 # Conversation History Search
@@ -49,7 +49,10 @@ python3 "$SKILL_DIR/conversation_history.py" index
 ## Data Sources
 
 - **Claude Code / Conductor**: `~/.claude/projects/*/*.jsonl`
-- **Claude Desktop exports**: `~/conductor/claude-desktop-export/*/conversation.json`
+- **Claude web/Desktop exports**: `~/.agents/conversations/claude-desktop/`, legacy
+  `~/conductor/claude-desktop-export/`, or `CONVERSATION_HISTORY_CLAUDE_EXPORT` (a JSON file or directory).
+  Single-chat JSON and bulk arrays are supported; visible text on the selected message branch is searched.
+  The `claude-desktop` source label includes web chats for compatibility.
 - **Codex**: `~/.codex/sessions/**/*.jsonl`
 - **OpenCode v2**: `~/.local/share/opencode/opencode.db` (or
   `$XDG_DATA_HOME/opencode/opencode.db`). OpenCode stores session metadata in
@@ -67,6 +70,21 @@ The ChatGPT macOS app also stores local `conversations-v3-*/*.data` files under 
 2. Use `show` with the session ID if the user needs more detail.
 3. Summarize findings concisely instead of dumping raw messages.
 4. Try multiple search terms for specific topics.
+5. If local results are missing/incomplete or the user asks for web history, offer once: **"Would you
+   like me to extend this search to your Claude web/Desktop conversations using a browser? You can
+   sign in yourself; I’ll search only the agreed scope. Should matching exports stay temporary or be
+   saved locally?"** Do not open or inspect a browser before consent. If they agree, follow
+   [the browser extension workflow](references/browser-search.md). If they decline, local search still works.
+
+## Usage metrics are a separate concern
+
+This search tool exposes text/session metadata, not calculated token/cost totals. Ordinary Claude chat
+JSON may contain no usage counters; text-length/tokenizer estimates are not actual billed usage.
+Cowork remote session responses may instead contain `external_metadata.usage` with tokens, cache
+counters, and service-reported cost. A usage-analysis skill, such as `common-review-claude-spend` if
+separately installed, can import those snapshots. It should own aggregation/pricing rather than
+duplicating it here. Keep snapshot cost separate from API-equivalent estimates and do not invent
+daily/monthly attribution, cache TTL, miss causes, or historic model mix from a session snapshot.
 
 ## Tips
 

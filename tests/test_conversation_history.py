@@ -1,10 +1,11 @@
-"""OpenCode storage support uses only synthetic, local SQLite fixtures."""
+"""Conversation readers use synthetic local SQLite/JSON fixtures, never a browser or account."""
 
 from __future__ import annotations
 
 from contextlib import redirect_stdout
 import importlib
 import io
+import json
 import os
 from pathlib import Path
 import sqlite3
@@ -19,6 +20,38 @@ ROOT = Path(__file__).parents[1]
 SKILL_DIR = ROOT / "skills" / "tools" / "conversation-history"
 sys.path.insert(0, str(SKILL_DIR))
 history = importlib.import_module("conversation_history")
+
+
+class ClaudeBrowserExportTest(unittest.TestCase):
+    def test_single_and_bulk_exports_are_searchable_without_hidden_or_tool_content(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            data = {"uuid": "synthetic-chat", "name": "Browser example", "updated_at": "2026-09-01T00:00:00Z",
+                    "current_leaf_message_uuid": "selected", "chat_messages": [
+                        {"uuid": "user", "sender": "human", "text": "", "parent_message_uuid": "root",
+                         "content": [{"type": "text", "text": "Synthetic sunflower query"}]},
+                        {"uuid": "alternative", "sender": "assistant", "text": "Discarded alternative",
+                         "parent_message_uuid": "user"},
+                        {"uuid": "selected", "sender": "assistant", "text": "", "parent_message_uuid": "user",
+                         "content": [{"type": "text", "text": "Selected answer"},
+                                     {"type": "tool_result", "content": [{"type": "text", "text": "Private memory"}]},
+                                     {"type": "thinking", "thinking": "Hidden reasoning"}]},
+                    ]}
+            (root / "single.json").write_text(json.dumps(data))
+            newer = dict(data, updated_at="2026-09-02T00:00:00Z")
+            (root / "bulk.json").write_text(json.dumps([newer, dict(data, uuid="synthetic-chat-two")]))
+            (root / "broken.json").write_text("{")
+            history.load_claude_conversations.cache_clear()
+            with patch.object(history, "CLAUDE_DESKTOP_EXPORT_DIRS", ()), patch.dict(
+                os.environ, {"CONVERSATION_HISTORY_CLAUDE_EXPORT": str(root)}
+            ):
+                sessions = list(history.iter_claude_desktop_sessions())
+            self.assertEqual(len(sessions), 2)
+            for session in sessions:
+                self.assertEqual(list(history.read_messages(session)), [
+                    ("user", "Synthetic sunflower query"), ("assistant", "Selected answer")])
+            self.assertEqual(next(s for s in sessions if s.session_id == "synthetic-chat").path.name, "bulk.json")
+            history.load_claude_conversations.cache_clear()
 
 
 class OpenCodeHistoryTest(unittest.TestCase):

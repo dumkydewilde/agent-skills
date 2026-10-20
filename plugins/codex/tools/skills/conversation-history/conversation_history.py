@@ -35,6 +35,7 @@ HOME = Path.home()
 HOME_DIR_PREFIX = str(HOME).replace("/", "-") + "-"
 CLAUDE_PROJECTS = HOME / ".claude" / "projects"
 CLAUDE_DESKTOP_EXPORT = HOME / "conductor" / "claude-desktop-export"
+CLAUDE_DESKTOP_EXPORT_DIRS = (HOME / ".agents" / "conversations" / "claude-desktop", CLAUDE_DESKTOP_EXPORT)
 CODEX_SESSIONS = HOME / ".codex" / "sessions"
 CHATGPT_APP_SUPPORT = HOME / "Library" / "Application Support" / "com.openai.chat"
 CHATGPT_EXPORT_CANDIDATES = (
@@ -348,13 +349,43 @@ def iter_claude_code_sessions() -> Iterator[Session]:
             yield Session(session_id, "claude-code", project, jsonl, path_mtime(jsonl))
 
 
+def claude_export_paths() -> list[Path]:
+    roots = []
+    override = os.environ.get("CONVERSATION_HISTORY_CLAUDE_EXPORT")
+    if override:
+        roots.append(Path(override).expanduser())
+    roots.extend(CLAUDE_DESKTOP_EXPORT_DIRS)
+    paths = []
+    for root in roots:
+        if root.is_file():
+            paths.append(root)
+        elif root.is_dir():
+            paths.extend(sorted(root.rglob("*.json")))
+    return list(dict.fromkeys(paths))
+
+
+@lru_cache(maxsize=32)
+def load_claude_conversations(path: Path) -> tuple[dict[str, Any], ...]:
+    try:
+        data = json.loads(path.read_text())
+    except (OSError, ValueError):
+        return ()
+    rows = data if isinstance(data, list) else [data]
+    return tuple(row for row in rows if isinstance(row, dict) and isinstance(row.get("chat_messages"), list))
+
+
 def iter_claude_desktop_sessions() -> Iterator[Session]:
-    if not CLAUDE_DESKTOP_EXPORT.exists():
-        return
-    for entry in CLAUDE_DESKTOP_EXPORT.iterdir():
-        conv = entry / "conversation.json"
-        if conv.exists():
-            yield Session(entry.name, "claude-desktop", "desktop", conv, path_mtime(conv))
+    latest = {}
+    for path in claude_export_paths():
+        for conv in load_claude_conversations(path):
+            session_id = str(conv.get("uuid") or path.parent.name)
+            title = str(conv.get("name") or "untitled")
+            timestamp = parse_timestamp(conv.get("updated_at") or conv.get("created_at"), path_mtime(path))
+            session = Session(session_id, "claude-desktop", f"claude/{title}", path, timestamp,
+                              {"conversation_id": conv.get("uuid")})
+            if session_id not in latest or timestamp >= latest[session_id].timestamp:
+                latest[session_id] = session
+    yield from latest.values()
 
 
 def read_codex_meta(path: Path) -> tuple[str, datetime]:
@@ -471,17 +502,30 @@ def read_claude_code_messages(path: Path) -> Iterator[tuple[str, str]]:
                 yield str(role), content
 
 
-def read_claude_desktop_messages(path: Path) -> Iterator[tuple[str, str]]:
-    with path.open("r", errors="replace") as f:
-        try:
-            data = json.load(f)
-        except json.JSONDecodeError:
-            return
-    for msg in data.get("chat_messages", []):
+def read_claude_desktop_messages(path: Path, conversation_id: str | None = None) -> Iterator[tuple[str, str]]:
+    conversations = load_claude_conversations(path)
+    data = next((c for c in conversations if conversation_id is None or c.get("uuid") == conversation_id), None)
+    if data is None:
+        return
+    messages = data["chat_messages"]
+    by_id = {m["uuid"]: m for m in messages if isinstance(m, dict) and m.get("uuid")}
+    leaf = data.get("current_leaf_message_uuid")
+    if leaf in by_id:
+        selected, seen = [], set()
+        while leaf in by_id and leaf not in seen:
+            seen.add(leaf)
+            selected.append(by_id[leaf])
+            leaf = by_id[leaf].get("parent_message_uuid")
+        messages = list(reversed(selected))
+    for msg in messages:
         if not isinstance(msg, dict):
             continue
         sender = msg.get("sender", "")
-        text = msg.get("text") or extract_text(msg.get("content", []))
+        if sender not in ("human", "assistant"):
+            continue
+        content = msg.get("content", [])
+        visible = [b for b in content if isinstance(b, dict) and b.get("type") == "text"] if isinstance(content, list) else content
+        text = msg.get("text") or extract_text(visible)
         role = "user" if sender == "human" else "assistant"
         if text.strip():
             yield role, text
@@ -538,7 +582,7 @@ def read_messages(session: Session) -> Iterator[tuple[str, str]]:
     if session.source == "claude-code":
         return read_claude_code_messages(session.path)
     if session.source == "claude-desktop":
-        return read_claude_desktop_messages(session.path)
+        return read_claude_desktop_messages(session.path, (session.extra or {}).get("conversation_id"))
     if session.source == "codex":
         return read_codex_messages(session.path)
     if session.source == "opencode":

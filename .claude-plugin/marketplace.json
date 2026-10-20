@@ -13,7 +13,7 @@
       "name": "tools",
       "source": "./plugins/claude/tools",
       "description": "General-purpose tools: conversation-history search, web-scraper, field-notes, and wizard scripts that walk a human through manual setup.",
-      "version": "0.5.0",
+      "version": "0.5.1",
       "category": "productivity"
     },
     {
