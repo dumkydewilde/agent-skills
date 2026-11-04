@@ -12,6 +12,7 @@ General-purpose utilities.
 | `conversation-history` | Search past Claude Code, Claude Desktop, Codex, OpenCode, and ChatGPT conversations from local logs and exports |
 | `web-scraper` | Build resilient scrapers via a discovery-then-script workflow |
 | `field-notes` | Build field notes: one sheet, a notebook of them, or a shelf of notebooks. Markdown sources, HTML templates for a swipeable deck on aged paper, the indexes that open it, and image prompts for printed posters |
+| `share-secrets` | Keep API keys in one password manager and load them on every machine through its CLI: 1Password `op://` references in a committed `.tpl`, or Bitwarden Secrets Manager through `bws`. Moved from Valise, which bundled it until 2026-11 |
 | `wizard` | Generate an interactive bash wizard that walks a human through steps only they can perform: a third-party dashboard, minting credentials, wiring CI secrets. Ported from [mattpocock/skills](https://github.com/mattpocock/skills) (MIT) |
 
 ![Twelve food sheets on a notebook index, each a drawn mark on pale paper
